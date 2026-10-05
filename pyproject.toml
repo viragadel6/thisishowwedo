@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exact-formula-search"
+version = "0.1.0"
+description = "Exact symbolic search for counterexamples to algebraic, group and planar determinant identities"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "exact_formula_search maintainers" }]
+keywords = ["sympy", "exact arithmetic", "counterexample search", "jacobian conjecture"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "sympy>=1.12",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+exact-formula-search = "exact_formula_search.__main__:main"
+
+[project.urls]
+Homepage = "https://example.invalid/exact-formula-search"
+
+[tool.setuptools]
+packages = ["exact_formula_search"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

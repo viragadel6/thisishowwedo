@@ -10,6 +10,8 @@ def format_candidate(specification: ProblemSpec, candidate: Candidate) -> str:
         second = canonicalize_formula(exact_parse_expression(str(candidate.formulas["F2"]), ("x", "y")))
         point = candidate.points["P"]
         other = candidate.points["Q"]
+        if len(point) != 2 or len(other) != 2:
+            raise ValueError("point_dimension_mismatch")
         point_first = canonicalize_formula(exact_parse_expression(str(point[0])))
         point_second = canonicalize_formula(exact_parse_expression(str(point[1])))
         other_first = canonicalize_formula(exact_parse_expression(str(other[0])))
