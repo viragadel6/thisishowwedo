@@ -1,0 +1,285 @@
+{
+  "kind": "counterexample",
+  "problem_kind": "algebraic_identity_counterassignment",
+  "kind_label": "algebraic identity counterassignment",
+  "query": "cáfold meg az x/(x-1) = 1 azonosságot",
+  "statement": {
+    "text": "x/(x-1) = 1",
+    "latex": "\\frac{x}{x - 1} = 1"
+  },
+  "headline": "x = 0",
+  "headline_latex": "x = 0",
+  "formatted_text": "x = 0",
+  "generated_at": "2026-10-06T12:01:31Z",
+  "runtime_seconds": "0.02",
+  "budget": {
+    "time_seconds": "20.00",
+    "max_frontier_visits": 240,
+    "max_verified_candidates": 120,
+    "max_mutation_rounds": 60,
+    "max_candidates_per_frontier": 4,
+    "max_instances_per_solve": 4096,
+    "max_point_pairs": 512,
+    "execution_timeout_seconds": "8.00"
+  },
+  "statistics": {
+    "frontiers_examined": 1,
+    "candidates_verified": 1,
+    "mutation_rounds": 0,
+    "queued_frontiers": 3,
+    "repairs": 0,
+    "executions": 1,
+    "lane_count": 1,
+    "lanes": [
+      {
+        "lane": "lane_assignment_0",
+        "visits": 1,
+        "candidates": 0,
+        "repairs": 0
+      }
+    ],
+    "repair_reasons": [],
+    "elapsed_seconds": "0.02"
+  },
+  "formalization": {
+    "problem_kind": "algebraic_identity_counterassignment",
+    "kind": "algebraic_identity_counterassignment",
+    "kind_label": "algebraic identity counterassignment",
+    "statement": {
+      "text": "x/(x-1) = 1",
+      "latex": "\\frac{x}{x - 1} = 1"
+    },
+    "policy_latex": "\\text{find an exact assignment that refutes the identity}",
+    "variables": [
+      {
+        "name": "x",
+        "latex": "x"
+      }
+    ],
+    "constraints": [],
+    "domains": [
+      "algebraic"
+    ],
+    "normalized_tokens": [
+      "cafold",
+      "meg",
+      "az",
+      "x",
+      "x",
+      "1",
+      "1",
+      "azonossagot"
+    ],
+    "output_roles": {
+      "x": "x"
+    },
+    "budget": {
+      "time_seconds": "20.00",
+      "max_frontier_visits": 240,
+      "max_verified_candidates": 120,
+      "max_mutation_rounds": 60,
+      "max_candidates_per_frontier": 4,
+      "max_instances_per_solve": 4096,
+      "max_point_pairs": 512,
+      "execution_timeout_seconds": "8.00"
+    },
+    "left_latex": "\\frac{x}{x - 1}",
+    "right_latex": "1",
+    "left_expression": "x/(x-1)",
+    "right_expression": "1",
+    "left_word": "",
+    "right_word": "",
+    "domain_obligations": [
+      {
+        "expression": "x - 1",
+        "latex": "x - 1"
+      }
+    ],
+    "order_bound": null,
+    "order_bounds": null,
+    "components": [],
+    "point_roles": [],
+    "determinant_requirement": "",
+    "left_canonical_expression": "x/(x - 1)",
+    "right_canonical_expression": "1",
+    "left_canonical_latex": "\\frac{x}{x - 1}",
+    "right_canonical_latex": "1",
+    "search_extent": 2,
+    "identity_latex": "\\frac{x}{x - 1} = 1"
+  },
+  "frontier": {
+    "signature": "bff242ca995637c520100c7c7e9ebd468f8f4dd94c394b173397f4484d82a8ee",
+    "short_signature": "bff242ca9956",
+    "lane": "lane_assignment_0",
+    "kind": "algebraic_assignment",
+    "degree_extent": 0,
+    "coefficient_extent": 0,
+    "support_sizes": [],
+    "symmetry_mode": "none",
+    "composition_scheme": "direct",
+    "elimination_objective": "coefficients_first",
+    "point_pattern": "rational_grid",
+    "exact_domain": "rational",
+    "mutation_lineage": [],
+    "mutation_depth": 0,
+    "solver_route": "solve",
+    "term_order": "lex",
+    "repair_action": "",
+    "independent_check_level": 0,
+    "prime": null,
+    "max_order": null,
+    "denominator_equations": false,
+    "frame": {
+      "degree_extent": 0,
+      "coefficient_extent": 0,
+      "symmetry_mode": "none",
+      "composition_scheme": "direct",
+      "elimination_objective": "coefficients_first",
+      "point_pattern": "rational_grid",
+      "exact_domain": "rational",
+      "solver_route": "solve"
+    }
+  },
+  "algebraic": {
+    "variables": [
+      "x"
+    ],
+    "assignments": {
+      "x": "0"
+    },
+    "assignments_latex": {
+      "x": "0"
+    },
+    "domain_obligation_expressions": [
+      "x - 1"
+    ],
+    "left_source": "x/(x-1)",
+    "right_source": "1",
+    "left_source_latex": "\\frac{x}{x - 1}",
+    "right_source_latex": "1",
+    "left_expression": "x/(x - 1)",
+    "right_expression": "1",
+    "left_latex": "\\frac{x}{x - 1}",
+    "right_latex": "1",
+    "left_value": "0",
+    "right_value": "1",
+    "left_value_latex": "0",
+    "right_value_latex": "1",
+    "difference": "-1",
+    "difference_latex": "-1",
+    "refuted": true,
+    "domain_obligations": [
+      {
+        "expression": "x - 1",
+        "latex": "x - 1",
+        "value": "-1",
+        "value_latex": "-1",
+        "satisfied": true
+      }
+    ],
+    "constraints": [],
+    "exact_inequality_check": true,
+    "assignment_latex": "x = 0"
+  },
+  "group": null,
+  "planar": null,
+  "exhaustion": null,
+  "proof": null,
+  "provenance": {
+    "worker_sha256": "d737ddf478cb9bbce63729470ee133ddaa9fc0556d4bc80dba6fdacefad41f51",
+    "source_fingerprint": "1872e59340f83dc8ba2e6335e1f1d9e2cc9516ce183681b0f895709ce7628995",
+    "frontier_signature": "bff242ca995637c520100c7c7e9ebd468f8f4dd94c394b173397f4484d82a8ee",
+    "entry_function": "search",
+    "worker_source": "from exact_formula_search.generated_runtime import run_generated_search\nFRONTIER = {'kind': 'algebraic_assignment', 'degree_extent': 0, 'coefficient_extent': 0, 'support_sets': (), 'symmetry_mode': 'none', 'composition_scheme': 'direct', 'elimination_objective': 'coefficients_first', 'point_pattern': 'rational_grid', 'exact_domain': 'rational', 'lane_identifier': 'lane_assignment_0', 'mutation_lineage': (), 'unique_signature': 'bff242ca995637c520100c7c7e9ebd468f8f4dd94c394b173397f4484d82a8ee', 'extra_parameters': {}}\nPROBLEM = {'kind': 'algebraic_identity_counterassignment', 'raw_text': 'cáfold meg az x/(x-1) = 1 azonosságot', 'normalized_tokens': ('cafold', 'meg', 'az', 'x', 'x', '1', '1', 'azonossagot'), 'variables': ('x',), 'mappings': {'left': 'x/(x - 1)', 'right': '1'}, 'predicates': ('assignment_inequality',), 'domains': ('algebraic',), 'output_roles': {'x': 'x'}, 'constraints': (), 'order_bound': None, 'search_limits': {'max_candidates': 4, 'max_instances': 4096, 'max_point_pairs': 512}, 'planar_target': None, 'algebraic_identity': {'variables': ('x',), 'left_expression': 'x/(x - 1)', 'right_expression': '1', 'domain': 'algebraic', 'search_extent': 2, 'left_source': 'x/(x-1)', 'right_source': '1', 'left_obligations': ('x - 1',), 'right_obligations': (), 'constraints': ()}, 'finite_group_identity': None}\nSOURCE_FINGERPRINT = '1872e59340f83dc8ba2e6335e1f1d9e2cc9516ce183681b0f895709ce7628995'\ndef search():\n    return run_generated_search(FRONTIER, PROBLEM, SOURCE_FINGERPRINT)\n",
+    "generator": "exact_formula_search.code_generation.generate_search_code",
+    "executor": "exact_formula_search.execution.execute_generated_code",
+    "verifier": "exact_formula_search.verification.verify_candidate",
+    "critic": "exact_formula_search.critique.critique_candidate",
+    "formalizer": "exact_formula_search.formalization.formalize_request"
+  },
+  "audit": [
+    {
+      "id": "float_free",
+      "label": "Exact arithmetic (no floating point)",
+      "status": "pass",
+      "passed": true,
+      "detail": "verification rejected every floating point value"
+    },
+    {
+      "id": "pole_exclusion",
+      "label": "Pole and denominator obligations",
+      "status": "pass",
+      "passed": true,
+      "detail": "denominator obligations were discharged exactly"
+    },
+    {
+      "id": "domain_exclusions",
+      "label": "Declared domain exclusions respected",
+      "status": "pass",
+      "passed": true,
+      "detail": "the certificate avoids every excluded value"
+    },
+    {
+      "id": "exact_inequality",
+      "label": "Exact refutation of the identity",
+      "status": "pass",
+      "passed": true,
+      "detail": "the left and right values differ by an exact nonzero value"
+    },
+    {
+      "id": "repeat_verification",
+      "label": "Deterministic verifier rerun",
+      "status": "pass",
+      "passed": true,
+      "detail": "a full rerun of the verifier reproduced the certificate"
+    },
+    {
+      "id": "independent_recheck",
+      "label": "Independent recomputation",
+      "status": "pass",
+      "passed": true,
+      "detail": "the critique layer recomputed the certificate with its own code path"
+    },
+    {
+      "id": "critique_clean",
+      "label": "Adversarial review found no blocking issue",
+      "status": "pass",
+      "passed": true,
+      "detail": "no blocking issue remained after the review"
+    },
+    {
+      "id": "source_fingerprint",
+      "label": "Candidate provenance fingerprint",
+      "status": "pass",
+      "passed": true,
+      "detail": "the candidate carries the fingerprint of its generated worker and frontier",
+      "value": "1872e59340f8"
+    },
+    {
+      "id": "worker_sha256",
+      "label": "Generated worker SHA-256",
+      "status": "pass",
+      "passed": true,
+      "detail": "the worker source digest is computed from the exact bytes that ran",
+      "value": "d737ddf478cb9bbc"
+    }
+  ],
+  "critique": {
+    "passed": true,
+    "issues": []
+  },
+  "verification": {
+    "passed": true,
+    "issues": [],
+    "artifacts": {
+      "left_value": "0",
+      "right_value": "1",
+      "exact_inequality_check": true,
+      "denominator_status": true,
+      "domain_exclusions_respected": true,
+      "no_numeric_certification": true
+    }
+  },
+  "worker_lines": 6,
+  "max_group_order": null
+}

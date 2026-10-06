@@ -134,6 +134,14 @@ Certificate payloads never contain floating point numbers: elapsed times are
 serialised as exact decimal strings and every algebraic value is canonical,
 exact text.
 
+### Example certificate
+
+`docs/example-refutation.json` and `docs/example-refutation.tex` are the
+verbatim exports of a live run of the statement
+`cáfold meg az x/(x-1) = 1 azonosságot`: the engine returned the exact
+counterassignment `x = 0`, whose left value is `0` and right value is `1`, with
+every audit row passing and the pole `x - 1` respected.
+
 ### Browser client
 
 The client in `exact_formula_search/web/static/` is compiled ahead of time from

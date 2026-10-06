@@ -1,0 +1,46 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb}
+\begin{document}
+\section*{Exact formula search certificate}
+
+\begin{equation}
+  \frac{x}{x - 1} = 1
+\end{equation}
+
+\paragraph{Exact counterassignment}
+\[
+  x = 0
+\]
+
+\paragraph{Exact substitution}
+\[
+  L(x_0) = 0,\qquad R(x_0) = 1,\qquad L - R = -1 \neq 0
+\]
+
+\paragraph{Domain obligations}
+\[
+  x - 1 = -1 \neq 0
+\]
+
+\paragraph{Request}
+\texttt{cáfold meg az x/(x-1) = 1 azonosságot}
+
+\paragraph{Verification}
+\begin{itemize}
+  \item \checkmark Exact arithmetic (no floating point): verification rejected every floating point value
+  \item \checkmark Pole and denominator obligations: denominator obligations were discharged exactly
+  \item \checkmark Declared domain exclusions respected: the certificate avoids every excluded value
+  \item \checkmark Exact refutation of the identity: the left and right values differ by an exact nonzero value
+  \item \checkmark Deterministic verifier rerun: a full rerun of the verifier reproduced the certificate
+  \item \checkmark Independent recomputation: the critique layer recomputed the certificate with its own code path
+  \item \checkmark Adversarial review found no blocking issue: no blocking issue remained after the review
+  \item \checkmark Candidate provenance fingerprint: the candidate carries the fingerprint of its generated worker and frontier
+  \item \checkmark Generated worker SHA-256: the worker source digest is computed from the exact bytes that ran
+\end{itemize}
+
+\paragraph{Provenance}
+\texttt{worker sha256: d737ddf478cb9bbce63729470ee133ddaa9fc0556d4bc80dba6fdacefad41f51}
+
+\texttt{source fingerprint: 1872e59340f83dc8ba2e6335e1f1d9e2cc9516ce183681b0f895709ce7628995}
+
+\end{document}
