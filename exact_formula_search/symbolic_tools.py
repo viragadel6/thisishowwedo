@@ -12,7 +12,6 @@ from sympy.parsing.sympy_parser import (
     auto_symbol,
     convert_xor,
     implicit_multiplication_application,
-    parse_expr,
     standard_transformations,
 )
 

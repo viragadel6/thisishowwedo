@@ -30,12 +30,32 @@ test = ["pytest>=7"]
 
 [project.scripts]
 exact-formula-search = "exact_formula_search.__main__:main"
+exact-formula-search-web = "exact_formula_search.web.__main__:main"
 
 [project.urls]
 Homepage = "https://example.invalid/exact-formula-search"
 
 [tool.setuptools]
-packages = ["exact_formula_search"]
+packages = ["exact_formula_search", "exact_formula_search.web"]
+
+[tool.setuptools.package-data]
+"exact_formula_search.web" = [
+    "static/index.html",
+    "static/manifest.webmanifest",
+    "static/sw.js",
+    "static/css/*.css",
+    "static/js/*.js",
+    "static/icons/*.png",
+    "static/splash/*.png",
+    "static/vendor/README.md",
+    "static/vendor/*/LICENSE",
+    "static/vendor/*/package.json",
+    "static/vendor/*/*.js",
+    "static/vendor/*/*.css",
+    "static/vendor/katex/fonts/*.woff2",
+    "jsx/*.jsx",
+    "jsx/*.mjs",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
