@@ -4,6 +4,15 @@ from typing import Any
 
 PRESETS: tuple[dict[str, Any], ...] = (
     {
+        "identifier": "counterexample_hungarian",
+        "label": "Cáfolat keresése (magyar kérés)",
+        "query": "cáfold meg az x/(x-1) = 1 azonosságot",
+        "problem_kind": "algebraic_identity_counterassignment",
+        "description": "magyar nyelvű cáfolatkérés: pontos ellenpélda a polelkerüléssel",
+        "expected": "counterexample",
+        "budget": {"time_seconds": 20, "max_frontier_visits": 60, "execution_timeout_seconds": 8},
+    },
+    {
         "identifier": "algebraic_pole_refutation",
         "label": "Identity with pole exclusions",
         "query": "refute the identity x/(x-1) = 1",

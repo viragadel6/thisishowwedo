@@ -140,7 +140,15 @@ The client in `exact_formula_search/web/static/` is compiled ahead of time from
 the JSX sources in `exact_formula_search/web/jsx/` and is committed. It renders
 KaTeX, streams the event log, draws the exact certificates (assignment tables,
 Cayley tables, Jacobian components with collision rows) and offers LaTeX, SymPy
-and JSON export. React, ReactDOM and KaTeX are vendored under
+and JSON export.
+
+On load the interface immediately runs a refutation preset (Hungarian wording is
+understood as well, for example `cáfold meg az x/(x-1) = 1 azonosságot`), so the
+first thing the page shows is a found counterexample with its exact certificate,
+verification audit and exports. The result header states the outcome explicitly:
+`refutation found · cáfolat megvan` for a certificate, `no refutation within
+budget · nincs cáfolat` for an honest exhaustion report, and `no counterexample
+exists · nincs cáfolat` when the exact difference already vanishes. React, ReactDOM and KaTeX are vendored under
 `static/vendor/` (see the licence table in `static/vendor/README.md`); there is
 no network dependency at runtime.
 

@@ -52,6 +52,8 @@ const KIND_LABELS = {
   planar_constant_determinant_collision: "planar Jacobian",
 };
 
+const DEFAULT_QUERY = "cáfold meg az x/(x-1) = 1 azonosságot";
+
 const DEFAULT_BUDGET = {
   time_seconds: 30,
   max_frontier_visits: 120,
@@ -815,7 +817,7 @@ const StreamLog = ({ events, autoScroll, onToggleAutoScroll, onClear }) =>
 
 const App = () => {
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(DEFAULT_QUERY);
   const [presets, setPresets] = useState([]);
   const [health, setHealth] = useState(null);
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
@@ -839,6 +841,7 @@ const App = () => {
   const [showWorker, setShowWorker] = useState(false);
   const [workerSource, setWorkerSource] = useState("");
 
+  const autoStartRef = useRef(false);
   const abortRef = useRef(null);
   const startedAtRef = useRef(0);
   const timerRef = useRef(0);
@@ -1130,6 +1133,15 @@ const App = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [startSearch, stopSearch]);
 
+  useEffect(() => {
+    if (autoStartRef.current) return undefined;
+    autoStartRef.current = true;
+    const timer = window.setTimeout(() => {
+      startSearch(DEFAULT_QUERY);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [startSearch]);
+
   const usePreset = useCallback(
     (preset) => {
       setQuery(preset.query);
@@ -1340,7 +1352,23 @@ const App = () => {
           h(
             Card,
             { className: "card-result" },
-            h(SectionTitle, { title: "Certificate", caption: "the exact object the engine certified" }),
+            h(SectionTitle, {
+              title: "Certificate",
+              caption: "the exact object the engine certified",
+              aside: result
+                ? h(
+                    Badge,
+                    { tone: result.kind === "counterexample" ? "pass" : result.kind === "exhaustion" ? "warn" : "kind" },
+                    result.kind === "counterexample"
+                      ? "refutation found · cáfolat megvan"
+                      : result.kind === "exhaustion"
+                        ? "no refutation within budget · nincs cáfolat"
+                        : "no counterexample exists · nincs cáfolat"
+                  )
+                : running
+                  ? h(Badge, { tone: "active" }, "searching for a refutation")
+                  : null,
+            }),
             h(ResultCard, { result, running })
           ),
           h(
