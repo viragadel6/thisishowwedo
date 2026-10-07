@@ -46,6 +46,7 @@ class FrozenMapping(_MappingABC):
 
 class ProblemKind(str, Enum):
     PLANAR_CONSTANT_DETERMINANT_COLLISION = "planar_constant_determinant_collision"
+    FINITE_FIELD_JACOBIAN_REFUTATION = "finite_field_jacobian_refutation"
     ALGEBRAIC_IDENTITY_COUNTERASSIGNMENT = "algebraic_identity_counterassignment"
     FINITE_GROUP_IDENTITY_COUNTERMODEL = "finite_group_identity_countermodel"
 
@@ -55,6 +56,7 @@ class ExactDomain(str, Enum):
     ALGEBRAIC = "algebraic"
     MODULAR_PRESCREEN = "modular_prescreen"
     FINITE_TABLE = "finite_table"
+    FINITE_FIELD_EXTENSION = "finite_field_extension"
 
 
 class FrontierKind(str, Enum):
@@ -67,6 +69,7 @@ class FrontierKind(str, Enum):
     COMPOSITION_PERTURBATION = "composition_perturbation"
     SUPPORT_MUTATION = "support_mutation"
     FINITE_FIELD_PRESCREEN = "finite_field_prescreen"
+    FINITE_FIELD_JACOBIAN_LATTICE = "finite_field_jacobian_lattice"
     ALGEBRAIC_POINT_COLLISION = "algebraic_point_collision"
     ELIMINATION_ORDER = "elimination_order"
     ALGEBRAIC_ASSIGNMENT = "algebraic_assignment"
@@ -125,6 +128,29 @@ class PlanarMapTarget:
 
 
 @dataclass(frozen=True)
+class FiniteFieldJacobiTarget:
+    variable_names: tuple[str, str] = ("x", "y")
+    characteristic_candidates: tuple[int, ...] = (2, 3, 5, 7, 11, 13)
+    extension_degree_candidates: tuple[int, ...] = (1, 2, 3)
+    coefficient_candidates: tuple[int, ...] = (1, 2, 3, 4, 5, 6, 7, 8)
+    map_families: tuple[str, ...] = (
+        "frobenius_pair",
+        "frobenius_shear",
+        "frobenius_y_shear",
+        "frobenius_mixed_shear",
+    )
+    determinant_must_be_nonzero_constant: bool = True
+    characteristic_zero_domain: str = "characteristic_zero_open"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "variable_names", tuple(self.variable_names))
+        object.__setattr__(self, "characteristic_candidates", tuple(int(item) for item in self.characteristic_candidates))
+        object.__setattr__(self, "extension_degree_candidates", tuple(int(item) for item in self.extension_degree_candidates))
+        object.__setattr__(self, "coefficient_candidates", tuple(int(item) for item in self.coefficient_candidates))
+        object.__setattr__(self, "map_families", tuple(str(item) for item in self.map_families))
+
+
+@dataclass(frozen=True)
 class AlgebraicIdentityTarget:
     variables: tuple[str, ...]
     left_expression: str
@@ -176,6 +202,7 @@ class ProblemSpec:
     constraints: tuple[str, ...] = field(default_factory=tuple)
     order_bound: int | None = None
     planar_target: PlanarMapTarget | None = None
+    finite_field_target: FiniteFieldJacobiTarget | None = None
     algebraic_identity: AlgebraicIdentityTarget | None = None
     finite_group_identity: FiniteGroupIdentityTarget | None = None
 

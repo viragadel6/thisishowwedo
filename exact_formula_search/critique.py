@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 import sympy as sp
 
@@ -13,7 +13,11 @@ from .symbolic_tools import (
     exact_parse_expression,
     exact_zero,
     expression_domain_obligations,
+    finite_field_element_from_text,
+    finite_field_element_text,
+    irreducible_modulus_polynomial,
     is_exact_algebraic_value,
+    polynomial_coefficient_dictionary,
 )
 from .verification import verify_candidate
 
@@ -154,9 +158,205 @@ def _independent_group_recheck(specification: ProblemSpec, candidate: Candidate)
     return left != right
 
 
+_FINITE_FIELD_SCAN_LIMIT = 20000
+
+
+def _packed_pack(vector: Sequence[int], prime: int) -> int:
+    value = 0
+    scale = 1
+    for entry in vector:
+        value += (int(entry) % prime) * scale
+        scale *= prime
+    return value
+
+
+def _packed_digits(value: int, prime: int, count: int) -> tuple[int, ...]:
+    digits: list[int] = []
+    current = int(value)
+    for _ in range(count):
+        digits.append(current % prime)
+        current //= prime
+    return tuple(digits)
+
+
+def _packed_add(left: int, right: int, prime: int, degree: int) -> int:
+    left_digits = _packed_digits(left, prime, degree)
+    right_digits = _packed_digits(right, prime, degree)
+    return _packed_pack(tuple((a + b) % prime for a, b in zip(left_digits, right_digits)), prime)
+
+
+def _packed_negate(value: int, prime: int, degree: int) -> int:
+    return _packed_pack(tuple((-entry) % prime for entry in _packed_digits(value, prime, degree)), prime)
+
+
+def _packed_multiply(left: int, right: int, prime: int, degree: int, modulus: Sequence[int]) -> int:
+    if degree <= 1:
+        return (int(left) * int(right)) % prime
+    digits = [0] * (2 * degree)
+    left_digits = _packed_digits(left, prime, degree)
+    right_digits = _packed_digits(right, prime, degree)
+    for index, a in enumerate(left_digits):
+        if not a:
+            continue
+        for offset, b in enumerate(right_digits):
+            if b:
+                digits[index + offset] = (digits[index + offset] + a * b) % prime
+    for power in range(len(digits) - 1, degree - 1, -1):
+        top = digits[power]
+        if not top:
+            continue
+        digits[power] = 0
+        shift = power - degree
+        for index in range(degree):
+            digits[shift + index] = (digits[shift + index] - top * modulus[index]) % prime
+    return _packed_pack(tuple(digits[:degree]), prime)
+
+
+def _packed_power(value: int, exponent: int, prime: int, degree: int, modulus: Sequence[int]) -> int:
+    result = 1
+    base = int(value) % (prime ** degree) if degree > 1 else int(value) % prime
+    count = max(0, int(exponent))
+    while count:
+        if count & 1:
+            result = _packed_multiply(result, base, prime, degree, modulus)
+        base = _packed_multiply(base, base, prime, degree, modulus)
+        count >>= 1
+    return result
+
+
+def _packed_polynomial_evaluation(coefficients: Mapping[tuple[int, int], int], point: Sequence[int], prime: int, degree: int, modulus: Sequence[int]) -> int:
+    total = 0
+    for monomial, coefficient in coefficients.items():
+        reduced = int(coefficient) % prime
+        if not reduced:
+            continue
+        term = reduced
+        if monomial[0]:
+            term = _packed_multiply(term, _packed_power(point[0], monomial[0], prime, degree, modulus), prime, degree, modulus)
+        if monomial[1]:
+            term = _packed_multiply(term, _packed_power(point[1], monomial[1], prime, degree, modulus), prime, degree, modulus)
+        total = _packed_add(total, term, prime, degree)
+    return total
+
+
+def _independent_finite_field_recheck(specification: ProblemSpec, candidate: Candidate) -> bool:
+    artifacts = dict(candidate.exact_derivation_artifacts)
+    try:
+        prime = int(artifacts.get("field_characteristic"))
+        degree = int(artifacts.get("field_extension_degree"))
+    except (TypeError, ValueError):
+        return False
+    if prime < 2 or degree < 1 or prime ** degree > _FINITE_FIELD_SCAN_LIMIT:
+        return False
+    modulus = irreducible_modulus_polynomial(prime, degree)
+    if artifacts.get("field_modulus") is not None and tuple(int(item) for item in artifacts.get("field_modulus")) != tuple(modulus):
+        return False
+    formulas = candidate.formulas
+    try:
+        first = exact_parse_expression(str(formulas["F1"]), ("x", "y"))
+        second = exact_parse_expression(str(formulas["F2"]), ("x", "y"))
+    except Exception:
+        return False
+    x_symbol, y_symbol = sp.symbols("x y")
+    try:
+        first_coefficients = {monomial: int(value) for monomial, value in polynomial_coefficient_dictionary(first, (x_symbol, y_symbol)).items()}
+        second_coefficients = {monomial: int(value) for monomial, value in polynomial_coefficient_dictionary(second, (x_symbol, y_symbol)).items()}
+    except Exception:
+        return False
+    determinant_terms: dict[tuple[int, int], int] = {}
+    partials: list[dict[tuple[int, int], int]] = []
+    for coefficients in (first_coefficients, second_coefficients):
+        for axis in (0, 1):
+            partial: dict[tuple[int, int], int] = {}
+            for monomial, value in coefficients.items():
+                if monomial[axis]:
+                    key = (monomial[0] - 1, monomial[1]) if axis == 0 else (monomial[0], monomial[1] - 1)
+                    partial[key] = partial.get(key, 0) + monomial[axis] * value
+            partials.append(partial)
+    first_x, first_y, second_x, second_y = partials
+    for left, left_value in first_x.items():
+        for right, right_value in second_y.items():
+            key = (left[0] + right[0], left[1] + right[1])
+            determinant_terms[key] = determinant_terms.get(key, 0) + left_value * right_value
+    for left, left_value in first_y.items():
+        for right, right_value in second_x.items():
+            key = (left[0] + right[0], left[1] + right[1])
+            determinant_terms[key] = determinant_terms.get(key, 0) - left_value * right_value
+    jacobian = {key: value for key, value in determinant_terms.items() if value}
+    point_count = prime ** degree
+    if point_count * point_count > _FINITE_FIELD_SCAN_LIMIT:
+        return False
+    points = [(left_index, right_index) for left_index in range(point_count) for right_index in range(point_count)]
+    determinant_values: set[int] = set()
+    images: dict[tuple[int, int], tuple[int, int]] = {}
+    duplicate_pairs: int = 0
+    for point in points:
+        determinant_value = _packed_polynomial_evaluation(jacobian, point, prime, degree, modulus)
+        determinant_values.add(determinant_value)
+        image = (
+            _packed_polynomial_evaluation(first_coefficients, point, prime, degree, modulus),
+            _packed_polynomial_evaluation(second_coefficients, point, prime, degree, modulus),
+        )
+        if image in images:
+            duplicate_pairs += 1
+        else:
+            images[image] = point
+    if len(determinant_values) != 1:
+        return False
+    constant = next(iter(determinant_values))
+    if constant == 0:
+        return False
+    if duplicate_pairs == 0:
+        return False
+    point_text = candidate.points.get("P")
+    other_text = candidate.points.get("Q")
+    if point_text is None or other_text is None or len(point_text) != 2 or len(other_text) != 2:
+        return False
+    try:
+        point = (
+            _packed_pack(finite_field_element_from_text(point_text[0], prime, degree), prime),
+            _packed_pack(finite_field_element_from_text(point_text[1], prime, degree), prime),
+        )
+        other = (
+            _packed_pack(finite_field_element_from_text(other_text[0], prime, degree), prime),
+            _packed_pack(finite_field_element_from_text(other_text[1], prime, degree), prime),
+        )
+    except Exception:
+        return False
+    if point == other:
+        return False
+    point_image = (
+        _packed_polynomial_evaluation(first_coefficients, point, prime, degree, modulus),
+        _packed_polynomial_evaluation(second_coefficients, point, prime, degree, modulus),
+    )
+    other_image = (
+        _packed_polynomial_evaluation(first_coefficients, other, prime, degree, modulus),
+        _packed_polynomial_evaluation(second_coefficients, other, prime, degree, modulus),
+    )
+    if point_image != other_image:
+        return False
+    recorded_point_image = artifacts.get("image_at_point")
+    recorded_other_image = artifacts.get("image_at_other")
+    if recorded_point_image is None or recorded_other_image is None:
+        return False
+    point_image_text = [
+        finite_field_element_text(_packed_digits(point_image[0], prime, degree), prime),
+        finite_field_element_text(_packed_digits(point_image[1], prime, degree), prime),
+    ]
+    other_image_text = [
+        finite_field_element_text(_packed_digits(other_image[0], prime, degree), prime),
+        finite_field_element_text(_packed_digits(other_image[1], prime, degree), prime),
+    ]
+    if point_image_text != [str(item) for item in recorded_point_image]:
+        return False
+    return other_image_text == [str(item) for item in recorded_other_image]
+
+
 def _independent_recheck(specification: ProblemSpec, candidate: Candidate) -> bool:
     if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
         return _independent_planar_recheck(specification, candidate)
+    if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        return _independent_finite_field_recheck(specification, candidate)
     if specification.kind == ProblemKind.FINITE_GROUP_IDENTITY_COUNTERMODEL:
         return _independent_group_recheck(specification, candidate)
     return _independent_algebraic_recheck(specification, candidate)
@@ -217,6 +417,23 @@ def critique_candidate(
             issues.append(_issue("determinant_obligation_gap", "constant determinant obligations are incomplete", "repair determinant constraint route"))
         if artifacts.get("collision_differences_zero") is not True:
             issues.append(_issue("collision_obligation_gap", "collision obligations are incomplete", "repair collision equations"))
+    elif specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        if specification.finite_field_target is None:
+            issues.append(_issue("target_missing", "finite field target data is absent", "repair formalization"))
+        if artifacts.get("field_modulus_is_canonical") is not True:
+            issues.append(_issue("field_modulus_gap", "the field modulus is not the canonical irreducible polynomial", "recompute the irreducible modulus for the declared field"))
+        if artifacts.get("determinant_nonzero") is not True or artifacts.get("nonconstant_coefficients_vanish_mod_characteristic") is not True:
+            issues.append(_issue("determinant_obligation_gap", "constant determinant obligations are incomplete in the declared characteristic", "repair the determinant constraint route"))
+        if artifacts.get("independent_determinant_check") is not True:
+            issues.append(_issue("single_determinant_path", "determinant was not certified by independent paths", "add the coefficient-dictionary determinant check"))
+        if artifacts.get("independent_collision_check") is not True:
+            issues.append(_issue("single_collision_path", "collision was not certified by independent paths", "add a second finite field evaluation route"))
+        if artifacts.get("distinct_points") is not True:
+            issues.append(_issue("distinctness_gap", "point distinctness was not proved exactly", "change the collision witness"))
+        if artifacts.get("collision_differences_zero") is not True:
+            issues.append(_issue("collision_obligation_gap", "collision obligations are incomplete", "repair the collision equations"))
+        if artifacts.get("not_injective_on_finite_field") is not True:
+            issues.append(_issue("injectivity_gap", "non-injectivity over the finite field was not certified", "repair the point scan"))
     elif specification.kind == ProblemKind.ALGEBRAIC_IDENTITY_COUNTERASSIGNMENT:
         if artifacts.get("exact_inequality_check") is not True:
             issues.append(_issue("identity_inequality_gap", "identity inequality was not proved exactly", "change assignment search domain"))

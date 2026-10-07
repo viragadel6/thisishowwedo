@@ -413,12 +413,195 @@ def _group_script(certificate: Mapping[str, Any]) -> list[str]:
     return lines
 
 
+def _finite_field_script(certificate: Mapping[str, Any]) -> list[str]:
+    field = dict(certificate.get("finite_field") or {})
+    rows = [dict(item) for item in (field.get("component_rows") or ())]
+    if not rows:
+        raise ExportError("missing_finite_field_component")
+    prime = int(field.get("field_characteristic", 2))
+    degree = int(field.get("field_extension_degree", 1))
+    modulus = [int(item) for item in (field.get("field_modulus") or ())]
+    point_p = [str(item) for item in (field.get("point_p") or ())]
+    point_q = [str(item) for item in (field.get("point_q") or ())]
+    if len(point_p) != 2 or len(point_q) != 2:
+        raise ExportError("missing_finite_field_point_coordinate")
+    first_text = str(rows[0].get("expression", ""))
+    second_text = str(rows[1].get("expression", "")) if len(rows) > 1 else ""
+    if not first_text or not second_text:
+        raise ExportError("missing_finite_field_component")
+    lines: list[str] = []
+    lines.append("import sympy as sp")
+    lines.append("")
+    lines.append("x, y = sp.symbols(\"x y\")")
+    lines.extend(_literal_lines("first_expression_text", first_text))
+    lines.extend(_literal_lines("second_expression_text", second_text))
+    lines.append("first_expression = sp.sympify(first_expression_text, locals={\"x\": x, \"y\": y})")
+    lines.append("second_expression = sp.sympify(second_expression_text, locals={\"x\": x, \"y\": y})")
+    lines.extend(_literal_lines("prime", prime))
+    lines.extend(_literal_lines("degree", degree))
+    lines.extend(_literal_lines("modulus", list(modulus)))
+    lines.append("")
+    lines.append("def reduce_coefficients(values, prime, modulus):")
+    lines.append("    degree = len(modulus)")
+    lines.append("    if degree == 0:")
+    lines.append("        return [int(values[0]) % prime if values else 0]")
+    lines.append("    working = [int(entry) % prime for entry in values]")
+    lines.append("    while len(working) > degree:")
+    lines.append("        top = working.pop()")
+    lines.append("        if top == 0:")
+    lines.append("            continue")
+    lines.append("        shift = len(working) - degree")
+    lines.append("        for index in range(degree):")
+    lines.append("            working[shift + index] = (working[shift + index] - top * modulus[index]) % prime")
+    lines.append("    while len(working) < degree:")
+    lines.append("        working.append(0)")
+    lines.append("    return [entry % prime for entry in working]")
+    lines.append("")
+    lines.append("def multiply(left, right, prime, modulus):")
+    lines.append("    if not modulus:")
+    lines.append("        return [(int(left[0]) * int(right[0])) % prime]")
+    lines.append("    product = [0] * (len(left) + len(right) - 1)")
+    lines.append("    for index, first in enumerate(left):")
+    lines.append("        for offset, second in enumerate(right):")
+    lines.append("            product[index + offset] = (product[index + offset] + int(first) * int(second)) % prime")
+    lines.append("    return reduce_coefficients(product, prime, modulus)")
+    lines.append("")
+    lines.append("def element_text(values, prime):")
+    lines.append("    terms = []")
+    lines.append("    for degree in range(len(values) - 1, -1, -1):")
+    lines.append("        coefficient = int(values[degree]) % prime")
+    lines.append("        if coefficient == 0:")
+    lines.append("            continue")
+    lines.append("        if degree == 0:")
+    lines.append("            terms.append(str(coefficient))")
+    lines.append("        elif degree == 1:")
+    lines.append("            terms.append(\"a\" if coefficient == 1 else str(coefficient) + \"*a\")")
+    lines.append("        else:")
+    lines.append("            terms.append(\"a^\" + str(degree) if coefficient == 1 else str(coefficient) + \"*a^\" + str(degree))")
+    lines.append("    return \" + \".join(terms) if terms else \"0\"")
+    lines.append("")
+    lines.append("def parse_element(text, prime, degree):")
+    lines.append("    cleaned = str(text).replace(\" \", \"\").replace(\"**\", \"^\")")
+    lines.append("    values = [0] * degree")
+    lines.append("    if not cleaned or cleaned == \"0\":")
+    lines.append("        return values")
+    lines.append("    for term in cleaned.replace(\"-\", \"+ -\").split(\"+\"):")
+    lines.append("        term = term.strip()")
+    lines.append("        if not term:")
+    lines.append("            continue")
+    lines.append("        sign = 1")
+    lines.append("        if term.startswith(\"-\"):")
+    lines.append("            sign = -1")
+    lines.append("            term = term[1:]")
+    lines.append("        if \"a\" not in term:")
+    lines.append("            values[0] = (values[0] + sign * int(term)) % prime")
+    lines.append("            continue")
+    lines.append("        head, _, power_text = term.partition(\"a\")")
+    lines.append("        head = head.rstrip(\"*\")")
+    lines.append("        coefficient = int(head) if head else 1")
+    lines.append("        exponent = int(power_text[1:]) if power_text.startswith(\"^\") else 1")
+    lines.append("        values[exponent] = (values[exponent] + sign * coefficient) % prime")
+    lines.append("    return [entry % prime for entry in values]")
+    lines.append("")
+    lines.append("def evaluate(expression, point, prime, degree, modulus):")
+    lines.append("    polynomial = sp.Poly(expression, x, y)")
+    lines.append("    total = [0] * max(1, degree)")
+    lines.append("    for monomial, coefficient in polynomial.terms():")
+    lines.append("        term = [int(coefficient) % prime] + [0] * (max(1, degree) - 1)")
+    lines.append("        for axis, exponent in enumerate(monomial):")
+    lines.append("            for _ in range(int(exponent)):")
+    lines.append("                term = multiply(term, point[axis], prime, modulus)")
+    lines.append("        size = max(len(total), len(term))")
+    lines.append("        total = total + [0] * (size - len(total))")
+    lines.append("        term = term + [0] * (size - len(term))")
+    lines.append("        total = [((a + b) % prime) for a, b in zip(total, term)]")
+    lines.append("    return total")
+    lines.append("")
+    lines.append("point_p = [parse_element(\"" + point_p[0] + "\", prime, degree), parse_element(\"" + point_p[1] + "\", prime, degree)]")
+    lines.append("point_q = [parse_element(\"" + point_q[0] + "\", prime, degree), parse_element(\"" + point_q[1] + "\", prime, degree)]")
+    lines.append("if point_p == point_q:")
+    lines.append("    raise AssertionError(\"the exported witnesses are not distinct\")")
+    lines.append("jacobian = sp.expand(sp.diff(first_expression, x) * sp.diff(second_expression, y) - sp.diff(first_expression, y) * sp.diff(second_expression, x))")
+    lines.append("determinant_polynomial = sp.Poly(jacobian, x, y)")
+    lines.append("constant = None")
+    lines.append("for monomial, coefficient in determinant_polynomial.terms():")
+    lines.append("    reduced = int(coefficient) % prime")
+    lines.append("    if monomial == (0, 0):")
+    lines.append("        constant = reduced")
+    lines.append("    elif reduced:")
+    lines.append("        raise AssertionError(\"the exported determinant is not constant modulo the characteristic\")")
+    lines.append("if not constant:")
+    lines.append("    raise AssertionError(\"the exported determinant is zero modulo the characteristic\")")
+    lines.append("image_p = [evaluate(first_expression, point_p, prime, degree, modulus), evaluate(second_expression, point_p, prime, degree, modulus)]")
+    lines.append("image_q = [evaluate(first_expression, point_q, prime, degree, modulus), evaluate(second_expression, point_q, prime, degree, modulus)]")
+    lines.append("if image_p != image_q:")
+    lines.append("    raise AssertionError(\"the exported witnesses do not collide\")")
+    lines.append("print(\"field: GF(\" + str(prime) + (\"^\" + str(degree) if degree > 1 else \"\") + \")\" + \" with \" + str(prime ** degree) + \" elements\")")
+    lines.append("print(\"determinant modulo characteristic:\", constant)")
+    lines.append("print(\"F(P) =\", element_text(image_p[0], prime), \",\", element_text(image_p[1], prime))")
+    lines.append("print(\"F(Q) =\", element_text(image_q[0], prime), \",\", element_text(image_q[1], prime))")
+    lines.append("print(\"finite field Jacobian refutation verified with exact arithmetic\")")
+    return lines
+
+
+def _finite_field_latex(certificate: Mapping[str, Any]) -> list[str]:
+    field = dict(certificate.get("finite_field") or {})
+    symbols = _symbol_table(("x", "y"))
+    rows = [dict(item) for item in (field.get("component_rows") or ())]
+    raw_point_p = [str(item) for item in (field.get("point_p") or ())]
+    raw_point_q = [str(item) for item in (field.get("point_q") or ())]
+    lines: list[str] = []
+    lines.append("\\begin{equation}")
+    lines.append(
+        "  F(x,y) = \\left("
+        + _latex_expression(rows[0].get("expression", "0") if rows else "0", symbols)
+        + ",\\;"
+        + _latex_expression(rows[1].get("expression", "0") if len(rows) > 1 else "0", symbols)
+        + "\\right)\\quad\\text{over } "
+        + _latex_escape(str(field.get("field_label", "")))
+    )
+    lines.append("\\end{equation}")
+    lines.append("")
+    lines.append("\\paragraph{Constant nonzero determinant modulo the characteristic}")
+    lines.append("\\[")
+    lines.append("  \\det J_F(x,y) = " + _latex_expression(field.get("jacobian_determinant", "0"), symbols) + " \\equiv " + _latex_escape(str(field.get("determinant_constant_mod_characteristic", 1))) + " \\not\\equiv 0")
+    lines.append("\\]")
+    lines.append("")
+    lines.append("\\paragraph{Exact collision in the finite field}")
+    lines.append("\\[")
+    lines.append(
+        "  P = \\left("
+        + _latex_escape(raw_point_p[0] if len(raw_point_p) == 2 else "0")
+        + ",\\;"
+        + _latex_escape(raw_point_p[1] if len(raw_point_p) == 2 else "0")
+        + "\\right),\\qquad Q = \\left("
+        + _latex_escape(raw_point_q[0] if len(raw_point_q) == 2 else "0")
+        + ",\\;"
+        + _latex_escape(raw_point_q[1] if len(raw_point_q) == 2 else "0")
+        + "\\right)"
+    )
+    lines.append("\\]")
+    lines.append("\\[")
+    lines.append("  F(P) = F(Q),\\qquad P \\neq Q")
+    lines.append("\\]")
+    lines.append("")
+    lines.append("\\paragraph{Scope}")
+    lines.append(
+        "The refutation holds over the finite field "
+        + _latex_escape(str(field.get("field_label", "")))
+        + " in positive characteristic. The general two dimensional Jacobian conjecture in characteristic zero remains open."
+    )
+    return lines
+
+
 def sympy_reproduction_script(certificate: Mapping[str, Any]) -> str:
     problem_kind = str(certificate.get("problem_kind", ""))
     if problem_kind == "algebraic_identity_counterassignment":
         lines = _algebraic_script(certificate)
     elif problem_kind == "planar_constant_determinant_collision":
         lines = _planar_script(certificate)
+    elif problem_kind == "finite_field_jacobian_refutation":
+        lines = _finite_field_script(certificate)
     elif problem_kind == "finite_group_identity_countermodel":
         lines = _group_script(certificate)
     else:
@@ -558,6 +741,8 @@ def latex_summary(certificate: Mapping[str, Any]) -> str:
         body = _algebraic_latex(certificate)
     elif problem_kind == "planar_constant_determinant_collision":
         body = _planar_latex(certificate)
+    elif problem_kind == "finite_field_jacobian_refutation":
+        body = _finite_field_latex(certificate)
     elif problem_kind == "finite_group_identity_countermodel":
         body = _group_latex(certificate)
     else:

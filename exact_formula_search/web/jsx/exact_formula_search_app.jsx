@@ -50,9 +50,10 @@ const KIND_LABELS = {
   algebraic_identity_counterassignment: "algebraic identity",
   finite_group_identity_countermodel: "finite group",
   planar_constant_determinant_collision: "planar Jacobian",
+  finite_field_jacobian_refutation: "finite field Jacobian",
 };
 
-const DEFAULT_QUERY = "cáfold meg az x/(x-1) = 1 azonosságot";
+const DEFAULT_QUERY = "cáfold meg a 2D Jacobi-sejtést";
 
 const DEFAULT_BUDGET = {
   time_seconds: 30,
@@ -699,6 +700,58 @@ const ProofResult = ({ result }) => {
   );
 };
 
+const FiniteFieldResult = ({ result }) => {
+  const block = result.finite_field;
+  return h(
+    "div",
+    { className: "stack" },
+    h("div", { className: "result-headline" }, h(Tex, { latex: result.headline_latex, display: true })),
+    h("div", { className: "planar-map" }, h(Tex, { latex: block.map_latex, display: true })),
+    h("div", { className: "field-grid" },
+      h(Field, { label: "Field" }, block.field_label + " · " + String(block.field_order) + " elements"),
+      h(Field, { label: "Characteristic" }, String(block.field_characteristic) + " (positive)"),
+      h(Field, { label: "Extension degree" }, String(block.field_extension_degree)),
+      h(Field, { label: "Irreducible modulus" }, h(Tex, { latex: "m(a) = " + block.field_modulus_latex })),
+      h(Field, { label: "Map family" }, block.map_family || "n/a"),
+      h(Field, { label: "Runtime route" }, block.runtime_route || "n/a"),
+      h(Field, { label: "Det J modulo characteristic" }, h(Tex, { latex: block.determinant_constant_latex })),
+      h(Field, { label: "Determinant certificate" }, block.determinant_nonzero && block.nonconstant_coefficients_vanish_mod_characteristic ? "constant nonzero mod p" : "incomplete"),
+      h(Field, { label: "Distinct points" }, block.distinct_points ? "proved" : "not proved"),
+      h(Field, { label: "Not injective over the field" }, block.not_injective_on_finite_field ? "certified" : "not certified"),
+      h(Field, { label: "Witnesses in the prime field" }, block.prime_field_collision ? "yes" : "no"),
+      h(Field, { label: "Lifts to the algebraic closure" }, block.collision_lifts_to_algebraic_closure ? "yes" : "no")
+    ),
+    h("div", { className: "field-grid" },
+      h(Field, { label: "Point P", wide: true }, h(Tex, { latex: block.point_p_latex })),
+      h(Field, { label: "Point Q", wide: true }, h(Tex, { latex: block.point_q_latex })),
+      h(Field, { label: "Common image F(P) = F(Q)", wide: true }, h(Tex, { latex: block.image_latex })),
+      h(Field, { label: "Jacobian determinant", wide: true }, h(Tex, { latex: block.jacobian_determinant_latex })),
+      h(Field, { label: "Independent determinant path", wide: true }, h(Tex, { latex: block.independent_determinant_latex }))
+    ),
+    h("div", { className: "table-block" },
+      h("span", { className: "field-label" }, "Collision equations"),
+      h("table", { className: "data-table" },
+        h("thead", null, h("tr", null, h("th", null, "component"), h("th", null, "at P"), h("th", null, "at Q"), h("th", null, "difference"))),
+        h("tbody", null,
+          block.collision_rows.map((item, index) =>
+            h("tr", { key: index },
+              h("td", null, item.label),
+              h("td", null, h(Tex, { latex: item.at_point })),
+              h("td", null, h(Tex, { latex: item.at_other })),
+              h("td", null, h(Tex, { latex: item.difference }))
+            )
+          )
+        )
+      )
+    ),
+    h("div", { className: "notice notice-warn" },
+      h("strong", null, "Scope"),
+      h("span", null, "the certificate refutes the Jacobian statement over " + String(block.refutation_scope) + "; the general two dimensional Jacobian conjecture in characteristic zero (" + String(block.characteristic_zero_status) + ") remains untouched by this witness")
+    ),
+    h("pre", { className: "exact-output" }, result.formatted_text)
+  );
+};
+
 const ResultCard = ({ result, running }) => {
   if (!result) {
     return h("div", { className: "empty-state" },
@@ -707,6 +760,7 @@ const ResultCard = ({ result, running }) => {
     );
   }
   if (result.kind === "counterexample") {
+    if (result.problem_kind === "finite_field_jacobian_refutation") return h(FiniteFieldResult, { result });
     if (result.problem_kind === "finite_group_identity_countermodel") return h(GroupResult, { result });
     if (result.problem_kind === "planar_constant_determinant_collision") return h(PlanarResult, { result });
     return h(AlgebraicResult, { result });
@@ -1168,7 +1222,7 @@ const App = () => {
           h("span", { className: "brand-mark" }, "λ"),
           h("div", null,
             h("h1", null, "Exact Formula Search"),
-            h("p", { className: "brand-sub" }, "exact rational algebra · finite group countermodels · planar determinant collisions")
+            h("p", { className: "brand-sub" }, "exact rational algebra · finite group countermodels · finite field Jacobian refutations")
           )
         ),
         h("div", { className: "topbar-meta" },

@@ -1,0 +1,53 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb}
+\begin{document}
+\section*{Exact formula search certificate}
+
+\begin{equation}
+  F(x,y) = \left(x + y^{2},\;x^{2} + y\right)\quad\text{over } GF(2)
+\end{equation}
+
+\paragraph{Constant nonzero determinant modulo the characteristic}
+\[
+  \det J_F(x,y) = - 4 x y + 1 \equiv 1 \not\equiv 0
+\]
+
+\paragraph{Exact collision in the finite field}
+\[
+  P = \left(0,\;1\right),\qquad Q = \left(1,\;0\right)
+\]
+\[
+  F(P) = F(Q),\qquad P \neq Q
+\]
+
+\paragraph{Scope}
+The refutation holds over the finite field GF(2) in positive characteristic. The general two dimensional Jacobian conjecture in characteristic zero remains open.
+
+\paragraph{Request}
+\texttt{cáfold meg a 2D Jacobi-sejtést}
+
+\paragraph{Verification}
+\begin{itemize}
+  \item \checkmark Exact arithmetic (no floating point): verification rejected every floating point value
+  \item \checkmark Pole and denominator obligations: denominator obligations were discharged exactly
+  \item \checkmark Declared domain exclusions respected: the certificate avoids every excluded value
+  \item \checkmark Canonical irreducible field modulus: the declared field is GF(p\textasciicircum{}k) with the canonical irreducible modulus and a complete element table
+  \item \checkmark Constant nonzero determinant modulo the characteristic: every nonconstant coefficient vanished modulo p and the constant is nonzero modulo p
+  \item \checkmark Determinant by two independent paths: derivative-matrix and coefficient-dictionary determinants reduce to the same polynomial over the field
+  \item \checkmark Collision by two independent field arithmetic paths: monomial and Horner evaluation over GF(p\textasciicircum{}k) agree at both witnesses
+  \item \checkmark The two points are provably distinct: a coordinate difference is a nonzero element of GF(p\textasciicircum{}k)
+  \item \checkmark Collision equations discharged: both components agree at the two distinct points, so the map is not injective over the field
+  \item \checkmark Refutation scope declared: the certificate states that the refutation is over the finite field and that characteristic 0 remains open
+  \item \checkmark Deterministic verifier rerun: a full rerun of the verifier reproduced the certificate
+  \item \checkmark Independent recomputation: the critique layer recomputed the certificate with its own code path
+  \item \checkmark Adversarial review found no blocking issue: no blocking issue remained after the review
+  \item \checkmark Candidate provenance fingerprint: the candidate carries the fingerprint of its generated worker and frontier
+  \item \checkmark Generated worker SHA-256: the worker source digest is computed from the exact bytes that ran
+\end{itemize}
+
+\paragraph{Provenance}
+\texttt{worker sha256: f3cf9794becab09ca08a0914bca98db0c93e35d1183af767d86550ac0c8bcc02}
+
+\texttt{source fingerprint: ecca371134effba4223828b93a2e49d574de2fa70558aecf75afb97716cfa813}
+
+\end{document}

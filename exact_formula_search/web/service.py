@@ -219,6 +219,9 @@ def exhaustion_text(specification: ProblemSpec, statistics: Mapping[str, Any], r
     ]
     if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
         lines.append("note: the two dimensional case of the Jacobian conjecture remains open")
+    if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        lines.append("note: the finite field ladder was visited without a certified collision; a missing collision is not a proof of the statement")
+        lines.append("note: the general two dimensional Jacobian conjecture in characteristic zero remains open")
     return "\n".join(lines)
 
 

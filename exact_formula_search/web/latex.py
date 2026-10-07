@@ -105,6 +105,8 @@ def _source_text(source: Any, canonical: Any) -> str:
 
 
 def statement_text(specification: ProblemSpec) -> str:
+    if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        return "every polynomial map of the plane over a finite field with constant nonzero Jacobian determinant is injective"
     if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
         return "every polynomial map of the plane with constant nonzero Jacobian determinant is injective"
     if specification.kind == ProblemKind.FINITE_GROUP_IDENTITY_COUNTERMODEL:
@@ -123,6 +125,11 @@ def statement_text(specification: ProblemSpec) -> str:
 
 
 def statement_latex(specification: ProblemSpec) -> str:
+    if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        return (
+            r"\det J(F_1, F_2) \equiv c \neq 0 \;\text{in } \mathbb{F}_{p^k} \;\Longrightarrow\; "
+            r"\forall P, Q \;:\; F_1(P) = F_1(Q),\ F_2(P) = F_2(Q) \;\Longrightarrow\; P = Q"
+        )
     if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
         return (
             r"\det J(F_1, F_2) \equiv c \neq 0 \;\Longrightarrow\; "

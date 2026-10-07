@@ -18,8 +18,16 @@ from .symbolic_tools import (
     evaluate_group_word,
     evaluate_group_word_by_postfix,
     expression_domain_obligations,
+    finite_field_add,
+    finite_field_element_text,
+    finite_field_elements,
+    finite_field_multiply,
+    finite_field_power,
+    finite_field_reduce,
     is_exact_algebraic_value,
+    irreducible_modulus_polynomial,
     normalize_expression,
+    polynomial_coefficient_dictionary,
 )
 
 _DEFAULT_MAX_CANDIDATES = 4
@@ -913,6 +921,221 @@ def _search_planar_modular(frontier: Mapping[str, Any], limits: Mapping[str, int
     return {"candidates": candidates, "failures": failures, "artifacts": {"route": "modular_prescreen", "prime": prime, "prescreen_hits": prescreen_hits, "rejected_lifts": rejected_lifts, "enumerations_attempted": attempted, "truncated": truncated}}
 
 
+_FINITE_FIELD_FAMILIES = ("frobenius_pair", "frobenius_shear", "frobenius_y_shear", "frobenius_mixed_shear")
+
+
+def _finite_field_map_expressions(family: str, prime: int, coefficients: Sequence[int], x_symbol: sp.Symbol, y_symbol: sp.Symbol) -> tuple[sp.Expr, sp.Expr] | None:
+    a = int(coefficients[0]) % int(prime) if len(coefficients) > 0 else 0
+    b = int(coefficients[1]) % int(prime) if len(coefficients) > 1 else 0
+    power = int(prime)
+    if family == "frobenius_pair":
+        return sp.expand(x_symbol + a * y_symbol ** power), sp.expand(y_symbol + b * x_symbol ** power)
+    if family == "frobenius_shear":
+        return sp.expand(x_symbol + a * x_symbol ** power), y_symbol
+    if family == "frobenius_y_shear":
+        return x_symbol, sp.expand(y_symbol + b * y_symbol ** power)
+    if family == "frobenius_mixed_shear":
+        return sp.expand(x_symbol + a * x_symbol ** power * y_symbol ** (power - 1)), y_symbol
+    return None
+
+
+def _finite_field_determinant_constant(first: sp.Expr, second: sp.Expr, prime: int, variables: Sequence[sp.Symbol]) -> tuple[int, bool] | None:
+    x_symbol, y_symbol = variables
+    determinant = sp.expand(sp.diff(first, x_symbol) * sp.diff(second, y_symbol) - sp.diff(first, y_symbol) * sp.diff(second, x_symbol))
+    try:
+        coefficients = polynomial_coefficient_dictionary(determinant, (x_symbol, y_symbol))
+    except Exception:
+        return None
+    constant = 0
+    for monomial, coefficient in coefficients.items():
+        reduced = int(coefficient) % int(prime)
+        if monomial == (0, 0):
+            constant = reduced
+        elif reduced:
+            return (constant, False)
+    return (constant, constant % int(prime) != 0)
+
+
+def _finite_field_reduce_polynomial(coefficients: Mapping[tuple[int, int], int], prime: int) -> dict[tuple[int, int], int]:
+    return {key: int(value) % int(prime) for key, value in coefficients.items() if int(value) % int(prime)}
+
+
+def _finite_field_direct_evaluation(coefficients: Mapping[tuple[int, int], int], point: Sequence[int], prime: int, modulus: Sequence[int]) -> tuple[int, ...]:
+    total = finite_field_reduce((0,), prime, modulus)
+    for monomial, coefficient in coefficients.items():
+        value = finite_field_reduce((int(coefficient) % int(prime),), prime, modulus)
+        if any(value):
+            term = finite_field_multiply(value, finite_field_power(point[0], monomial[0], prime, modulus), prime, modulus) if monomial[0] else value
+            if monomial[1]:
+                term = finite_field_multiply(term, finite_field_power(point[1], monomial[1], prime, modulus), prime, modulus)
+            total = finite_field_add(total, term, prime)
+    return finite_field_reduce(total, prime, modulus)
+
+
+def _finite_field_horner_evaluation(coefficients: Mapping[tuple[int, int], int], point: Sequence[int], prime: int, modulus: Sequence[int]) -> tuple[int, ...]:
+    x_value = finite_field_reduce(tuple(point[0]), prime, modulus)
+    y_value = finite_field_reduce(tuple(point[1]), prime, modulus)
+    maximum_y = max((monomial[1] for monomial in coefficients), default=0)
+    maximum_x = max((monomial[0] for monomial in coefficients), default=0)
+    outer = finite_field_reduce((0,), prime, modulus)
+    for y_degree in range(maximum_y, -1, -1):
+        inner = finite_field_reduce((0,), prime, modulus)
+        for x_degree in range(maximum_x, -1, -1):
+            coefficient = int(coefficients.get((x_degree, y_degree), 0)) % int(prime)
+            inner = finite_field_multiply(inner, x_value, prime, modulus)
+            if coefficient:
+                inner = finite_field_add(inner, finite_field_reduce((coefficient,), prime, modulus), prime)
+        outer = finite_field_multiply(outer, y_value, prime, modulus)
+        outer = finite_field_add(outer, inner, prime)
+    return finite_field_reduce(outer, prime, modulus)
+
+
+def _search_finite_field_jacobian(frontier: Mapping[str, Any], limits: Mapping[str, int]) -> dict[str, Any]:
+    x_symbol, y_symbol = sp.symbols("x y")
+    extra = dict(frontier.get("extra_parameters") or {})
+    prime = int(extra.get("prime", 2))
+    degree = int(extra.get("extension_degree", 1))
+    families = tuple(str(item) for item in (extra.get("map_families") or _FINITE_FIELD_FAMILIES))
+    if not families:
+        families = _FINITE_FIELD_FAMILIES
+    family_index = max(0, int(extra.get("family_index", 0)))
+    coefficient_offset = max(0, int(extra.get("coefficient_offset", 0)))
+    maximum_maps = max(1, int(extra.get("max_maps", 64)))
+    point_budget = max(4, int(extra.get("max_points", limits.get("max_enumerations", _DEFAULT_MAX_ENUMERATIONS))))
+    modulus = irreducible_modulus_polynomial(prime, degree)
+    elements = finite_field_elements(prime, degree)
+    field_order = prime ** degree
+    artifacts: dict[str, Any] = {
+        "route": "finite_field_jacobian_lattice",
+        "field_characteristic": prime,
+        "field_extension_degree": degree,
+        "field_order": field_order,
+        "field_modulus": list(modulus),
+        "map_families": list(families),
+        "family_index": family_index,
+        "coefficient_offset": coefficient_offset,
+        "maps_examined": 0,
+        "coefficient_vectors_examined": 0,
+        "points_examined": 0,
+        "point_budget": point_budget,
+        "map_attempts_truncated": False,
+        "point_scan_truncated": False,
+    }
+    coefficient_vectors: list[tuple[int, int]] = []
+    for value in range(max(1, prime * prime)):
+        first_coefficient = value % prime
+        second_coefficient = (value // prime) % prime
+        coefficient_vectors.append((first_coefficient, second_coefficient))
+    if coefficient_vectors:
+        rotated = coefficient_vectors[coefficient_offset % len(coefficient_vectors):] + coefficient_vectors[: coefficient_offset % len(coefficient_vectors)]
+    else:
+        rotated = []
+    ordered_families = families[family_index % len(families):] + families[: family_index % len(families)]
+    attempts = 0
+    for family in ordered_families:
+        for coefficients in rotated:
+            attempts += 1
+            if attempts > maximum_maps:
+                artifacts["map_attempts_truncated"] = True
+                break
+            expressions = _finite_field_map_expressions(family, prime, coefficients, x_symbol, y_symbol)
+            if expressions is None:
+                continue
+            first, second = expressions
+            determinant = _finite_field_determinant_constant(first, second, prime, (x_symbol, y_symbol))
+            if determinant is None:
+                continue
+            artifacts["maps_examined"] = int(artifacts["maps_examined"]) + 1
+            artifacts["coefficient_vectors_examined"] = int(artifacts["coefficient_vectors_examined"]) + 1
+            constant, constant_determinant = determinant
+            if not constant_determinant:
+                continue
+            first_coefficients = _finite_field_reduce_polynomial(polynomial_coefficient_dictionary(first, (x_symbol, y_symbol)), prime)
+            second_coefficients = _finite_field_reduce_polynomial(polynomial_coefficient_dictionary(second, (x_symbol, y_symbol)), prime)
+            images: dict[tuple[tuple[int, ...], tuple[int, ...]], tuple[tuple[int, ...], tuple[int, ...]]] = {}
+            collision: tuple[tuple[tuple[int, ...], tuple[int, ...]], tuple[tuple[int, ...], tuple[int, ...]]] | None = None
+            scanned = 0
+            for point in itertools.product(elements, repeat=2):
+                if scanned >= point_budget:
+                    artifacts["point_scan_truncated"] = True
+                    break
+                if _search_time_exceeded():
+                    artifacts["point_scan_truncated"] = True
+                    break
+                scanned += 1
+                image = (
+                    _finite_field_horner_evaluation(first_coefficients, point, prime, modulus),
+                    _finite_field_horner_evaluation(second_coefficients, point, prime, modulus),
+                )
+                previous = images.get(image)
+                if previous is not None and previous != point:
+                    collision = (previous, point)
+                    break
+                images.setdefault(image, point)
+            artifacts["points_examined"] = int(artifacts["points_examined"]) + scanned
+            if collision is None:
+                continue
+            point, other = collision
+            direct_first_point = _finite_field_direct_evaluation(first_coefficients, point, prime, modulus)
+            direct_second_point = _finite_field_direct_evaluation(second_coefficients, point, prime, modulus)
+            direct_first_other = _finite_field_direct_evaluation(first_coefficients, other, prime, modulus)
+            direct_second_other = _finite_field_direct_evaluation(second_coefficients, other, prime, modulus)
+            independent_first_point = _finite_field_horner_evaluation(first_coefficients, point, prime, modulus)
+            independent_second_point = _finite_field_horner_evaluation(second_coefficients, point, prime, modulus)
+            independent_first_other = _finite_field_horner_evaluation(first_coefficients, other, prime, modulus)
+            independent_second_other = _finite_field_horner_evaluation(second_coefficients, other, prime, modulus)
+            if direct_first_point != independent_first_point or direct_second_point != independent_second_point:
+                continue
+            if direct_first_other != independent_first_other or direct_second_other != independent_second_other:
+                continue
+            if direct_first_point != direct_first_other or direct_second_point != direct_second_other:
+                continue
+            candidate = serialize_candidate(
+                formulas={"F1": first, "F2": second},
+                points={
+                    "P": tuple(finite_field_element_text(element_value, prime) for element_value in point),
+                    "Q": tuple(finite_field_element_text(element_value, prime) for element_value in other),
+                },
+                artifacts={
+                    "runtime_route": str(frontier.get("kind", "")),
+                    "frontier_signature": str(frontier.get("unique_signature", "")),
+                    "map_family": family,
+                    "map_coefficients": [int(item) for item in coefficients],
+                    "field_characteristic": prime,
+                    "field_extension_degree": degree,
+                    "field_order": field_order,
+                    "field_modulus": list(modulus),
+                    "determinant_constant_mod_characteristic": int(constant),
+                    "points_examined": int(artifacts["points_examined"]),
+                    "maps_examined": int(artifacts["maps_examined"]),
+                    "map_attempts_truncated": bool(artifacts["map_attempts_truncated"]),
+                    "point_scan_truncated": bool(artifacts["point_scan_truncated"]),
+                    "image_at_point": [
+                        finite_field_element_text(direct_first_point, prime),
+                        finite_field_element_text(direct_second_point, prime),
+                    ],
+                    "image_at_other": [
+                        finite_field_element_text(direct_first_other, prime),
+                        finite_field_element_text(direct_second_other, prime),
+                    ],
+                    "runtime_determinant": _expression_text(sp.expand(sp.diff(first, x_symbol) * sp.diff(second, y_symbol) - sp.diff(first, y_symbol) * sp.diff(second, x_symbol))),
+                },
+            )
+            artifacts["candidate_family"] = family
+            artifacts["candidate_coefficients"] = [int(item) for item in coefficients]
+            artifacts["candidate_point"] = list(point)
+            artifacts["candidate_other"] = list(other)
+            artifacts["candidate_constant"] = int(constant)
+            return {"candidates": [candidate], "failures": (), "artifacts": artifacts}
+        if attempts > maximum_maps:
+            break
+    return {"candidates": (), "failures": ("no_finite_field_collision_in_frontier",), "artifacts": artifacts}
+
+
+def _search_finite_field_jacobian_frontier(frontier: Mapping[str, Any], problem: Mapping[str, Any]) -> dict[str, Any]:
+    return _search_finite_field_jacobian(frontier, _limits(frontier, problem))
+
+
 def search_planar_frontier(frontier: Mapping[str, Any], problem: Mapping[str, Any] | None = None) -> dict[str, Any]:
     limits = _limits(frontier, problem or {})
     kind = str(frontier.get("kind", ""))
@@ -1310,6 +1533,8 @@ def run_generated_search(frontier: Mapping[str, Any], problem: Mapping[str, Any]
         }
         if problem_kind == "planar_constant_determinant_collision":
             result = search_planar_frontier(frontier, problem)
+        elif problem_kind == "finite_field_jacobian_refutation":
+            result = _search_finite_field_jacobian_frontier(frontier, problem)
         elif problem_kind == "finite_group_identity_countermodel":
             result = search_finite_group_identity(frontier, problem)
         else:

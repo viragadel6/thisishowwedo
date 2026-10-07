@@ -1,0 +1,557 @@
+{
+  "sequence": 26,
+  "emitted_at": "2026-10-07T03:36:47Z",
+  "kind": "counterexample",
+  "problem_kind": "finite_field_jacobian_refutation",
+  "kind_label": "finite field Jacobian refutation",
+  "query": "cáfold meg a 2D Jacobi-sejtést",
+  "statement": {
+    "text": "every polynomial map of the plane over a finite field with constant nonzero Jacobian determinant is injective",
+    "latex": "\\det J(F_1, F_2) \\equiv c \\neq 0 \\;\\text{in } \\mathbb{F}_{p^k} \\;\\Longrightarrow\\; \\forall P, Q \\;:\\; F_1(P) = F_1(Q),\\ F_2(P) = F_2(Q) \\;\\Longrightarrow\\; P = Q"
+  },
+  "headline": "over GF(2): P = (0, 1) differs from Q = (1, 0) while F(P) = F(Q) = (1, 1)",
+  "headline_latex": "\\left(0, 1\\right) \\neq \\left(1, 0\\right),\\quad F(P) = F(Q) = \\left(1, 1\\right)",
+  "formatted_text": "field: GF(2) with 2 elements\nmodulus: none: GF(2) is the prime field\nF₁(x,y) = x + y**2\nF₂(x,y) = x**2 + y\nP = (0, 1)\nQ = (1, 0)\nF(P) = (1, 1) = F(Q)\ndet J = 1 (mod 2)\nscope: polynomial maps over the finite field GF(2) in positive characteristic\nlimitation: the general two dimensional Jacobian conjecture in characteristic 0 remains open and is not refuted by this witness",
+  "generated_at": "2026-10-07T03:36:47Z",
+  "runtime_seconds": "0.37",
+  "budget": {
+    "time_seconds": "25.00",
+    "max_frontier_visits": 40,
+    "max_verified_candidates": 120,
+    "max_mutation_rounds": 60,
+    "max_candidates_per_frontier": 4,
+    "max_instances_per_solve": 4096,
+    "max_point_pairs": 512,
+    "execution_timeout_seconds": "12.00"
+  },
+  "statistics": {
+    "frontiers_examined": 1,
+    "candidates_verified": 1,
+    "mutation_rounds": 0,
+    "queued_frontiers": 18,
+    "repairs": 0,
+    "executions": 1,
+    "lane_count": 1,
+    "lanes": [
+      {
+        "lane": "lane_gf_2_1",
+        "visits": 1,
+        "candidates": 0,
+        "repairs": 0
+      }
+    ],
+    "repair_reasons": [],
+    "elapsed_seconds": "0.37"
+  },
+  "formalization": {
+    "problem_kind": "finite_field_jacobian_refutation",
+    "kind": "finite_field_jacobian_refutation",
+    "kind_label": "finite field Jacobian refutation",
+    "statement": {
+      "text": "every polynomial map of the plane over a finite field with constant nonzero Jacobian determinant is injective",
+      "latex": "\\det J(F_1, F_2) \\equiv c \\neq 0 \\;\\text{in } \\mathbb{F}_{p^k} \\;\\Longrightarrow\\; \\forall P, Q \\;:\\; F_1(P) = F_1(Q),\\ F_2(P) = F_2(Q) \\;\\Longrightarrow\\; P = Q"
+    },
+    "policy_latex": "\\text{find an exact assignment that refutes the identity}",
+    "variables": [
+      {
+        "name": "x",
+        "latex": "x"
+      },
+      {
+        "name": "y",
+        "latex": "y"
+      }
+    ],
+    "constraints": [],
+    "domains": [
+      "finite_field_extension"
+    ],
+    "normalized_tokens": [
+      "cafold",
+      "meg",
+      "a",
+      "2d",
+      "2d",
+      "jacobi",
+      "sejtest"
+    ],
+    "output_roles": {
+      "first_component": "F₁",
+      "second_component": "F₂",
+      "first_point": "P",
+      "second_point": "Q"
+    },
+    "budget": {
+      "time_seconds": "25.00",
+      "max_frontier_visits": 40,
+      "max_verified_candidates": 120,
+      "max_mutation_rounds": 60,
+      "max_candidates_per_frontier": 4,
+      "max_instances_per_solve": 4096,
+      "max_point_pairs": 512,
+      "execution_timeout_seconds": "12.00"
+    },
+    "left_latex": "",
+    "right_latex": "",
+    "left_expression": "",
+    "right_expression": "",
+    "left_word": "",
+    "right_word": "",
+    "domain_obligations": [],
+    "order_bound": null,
+    "order_bounds": null,
+    "components": [],
+    "point_roles": [],
+    "determinant_requirement": "\\det J \\equiv c \\neq 0 \\;(\\mathrm{mod}\\; p)",
+    "finite_field_ladder": [
+      {
+        "prime": 2,
+        "degree": 1,
+        "field": "GF(2^1)",
+        "elements": 2
+      },
+      {
+        "prime": 2,
+        "degree": 2,
+        "field": "GF(2^2)",
+        "elements": 4
+      },
+      {
+        "prime": 2,
+        "degree": 3,
+        "field": "GF(2^3)",
+        "elements": 8
+      },
+      {
+        "prime": 3,
+        "degree": 1,
+        "field": "GF(3^1)",
+        "elements": 3
+      },
+      {
+        "prime": 3,
+        "degree": 2,
+        "field": "GF(3^2)",
+        "elements": 9
+      },
+      {
+        "prime": 3,
+        "degree": 3,
+        "field": "GF(3^3)",
+        "elements": 27
+      },
+      {
+        "prime": 5,
+        "degree": 1,
+        "field": "GF(5^1)",
+        "elements": 5
+      },
+      {
+        "prime": 5,
+        "degree": 2,
+        "field": "GF(5^2)",
+        "elements": 25
+      },
+      {
+        "prime": 5,
+        "degree": 3,
+        "field": "GF(5^3)",
+        "elements": 125
+      },
+      {
+        "prime": 7,
+        "degree": 1,
+        "field": "GF(7^1)",
+        "elements": 7
+      },
+      {
+        "prime": 7,
+        "degree": 2,
+        "field": "GF(7^2)",
+        "elements": 49
+      },
+      {
+        "prime": 7,
+        "degree": 3,
+        "field": "GF(7^3)",
+        "elements": 343
+      },
+      {
+        "prime": 11,
+        "degree": 1,
+        "field": "GF(11^1)",
+        "elements": 11
+      },
+      {
+        "prime": 11,
+        "degree": 2,
+        "field": "GF(11^2)",
+        "elements": 121
+      },
+      {
+        "prime": 11,
+        "degree": 3,
+        "field": "GF(11^3)",
+        "elements": 1331
+      },
+      {
+        "prime": 13,
+        "degree": 1,
+        "field": "GF(13^1)",
+        "elements": 13
+      },
+      {
+        "prime": 13,
+        "degree": 2,
+        "field": "GF(13^2)",
+        "elements": 169
+      },
+      {
+        "prime": 13,
+        "degree": 3,
+        "field": "GF(13^3)",
+        "elements": 2197
+      }
+    ],
+    "map_families": [
+      "frobenius_pair",
+      "frobenius_shear",
+      "frobenius_y_shear",
+      "frobenius_mixed_shear"
+    ],
+    "characteristic_zero_status": "characteristic_zero_open",
+    "determinant_latex": "\\det J(F_1, F_2) = \\frac{\\partial F_1}{\\partial x}\\frac{\\partial F_2}{\\partial y} - \\frac{\\partial F_1}{\\partial y}\\frac{\\partial F_2}{\\partial x} \\equiv c \\neq 0",
+    "field_note": "a keresés véges testek fölött cáfolja a 2D Jacobi-sejtést; a characteristic 0 eset nyitott marad"
+  },
+  "frontier": {
+    "signature": "44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f",
+    "short_signature": "44c4551fdcdb",
+    "lane": "lane_gf_2_1",
+    "kind": "finite_field_jacobian_lattice",
+    "degree_extent": 2,
+    "coefficient_extent": 1,
+    "support_sizes": [
+      6,
+      6
+    ],
+    "symmetry_mode": "none",
+    "composition_scheme": "direct",
+    "elimination_objective": "determinant_first",
+    "point_pattern": "finite_field",
+    "exact_domain": "finite_field_extension",
+    "mutation_lineage": [],
+    "mutation_depth": 0,
+    "solver_route": "solve",
+    "term_order": "lex",
+    "repair_action": "",
+    "independent_check_level": 0,
+    "prime": 2,
+    "max_order": null,
+    "denominator_equations": false,
+    "frame": {
+      "degree_extent": 2,
+      "coefficient_extent": 1,
+      "symmetry_mode": "none",
+      "composition_scheme": "direct",
+      "elimination_objective": "determinant_first",
+      "point_pattern": "finite_field",
+      "exact_domain": "finite_field_extension",
+      "solver_route": "solve"
+    }
+  },
+  "algebraic": null,
+  "group": null,
+  "planar": null,
+  "finite_field": {
+    "field_label": "GF(2)",
+    "field_characteristic": 2,
+    "field_extension_degree": 1,
+    "field_order": 2,
+    "field_modulus": [],
+    "field_modulus_text": "none: GF(2) is the prime field",
+    "field_modulus_latex": "\\text{prime field}",
+    "components": {
+      "F₁": "x + y^{2}",
+      "F₂": "x^{2} + y"
+    },
+    "component_rows": [
+      {
+        "key": "F1",
+        "label": "F₁",
+        "expression": "x + y**2",
+        "latex": "x + y^{2}"
+      },
+      {
+        "key": "F2",
+        "label": "F₂",
+        "expression": "x**2 + y",
+        "latex": "x^{2} + y"
+      }
+    ],
+    "point_p": [
+      "0",
+      "1"
+    ],
+    "point_q": [
+      "1",
+      "0"
+    ],
+    "point_p_latex": "\\left(0, 1\\right)",
+    "point_q_latex": "\\left(1, 0\\right)",
+    "points": [
+      {
+        "key": "P",
+        "coordinates": [
+          "0",
+          "1"
+        ],
+        "latex": "\\left(0, 1\\right)",
+        "coordinates_latex": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "key": "Q",
+        "coordinates": [
+          "1",
+          "0"
+        ],
+        "latex": "\\left(1, 0\\right)",
+        "coordinates_latex": [
+          "1",
+          "0"
+        ]
+      }
+    ],
+    "image_at_point": [
+      "1",
+      "1"
+    ],
+    "image_at_other": [
+      "1",
+      "1"
+    ],
+    "image_latex": "\\left(1, 1\\right)",
+    "collision_rows": [
+      {
+        "label": "F₁",
+        "at_point": "1",
+        "at_other": "1",
+        "difference": "0",
+        "equal": true
+      },
+      {
+        "label": "F₂",
+        "at_point": "1",
+        "at_other": "1",
+        "difference": "0",
+        "equal": true
+      }
+    ],
+    "collision_differences_zero": true,
+    "jacobian_determinant": "-4*x*y + 1",
+    "jacobian_determinant_latex": "- 4 x y + 1",
+    "independent_determinant": "1",
+    "independent_determinant_latex": "1",
+    "determinant_constant_mod_characteristic": 1,
+    "determinant_constant_latex": "\\det J \\equiv 1 \\;(\\mathrm{mod}\\; 2)",
+    "determinant_nonzero": true,
+    "nonconstant_coefficients_vanish_mod_characteristic": true,
+    "independent_determinant_check": true,
+    "independent_collision_check": true,
+    "distinct_points": true,
+    "not_injective_on_finite_field": true,
+    "prime_field_collision": true,
+    "collision_lifts_to_algebraic_closure": true,
+    "refutation_scope": "polynomial maps over the finite field GF(2)",
+    "characteristic_zero_status": "open",
+    "field_modulus_is_canonical": true,
+    "runtime_route": "finite_field_jacobian_lattice",
+    "runtime_determinant": "-4*x*y + 1",
+    "map_family": "frobenius_pair",
+    "frontier_signature": "44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f",
+    "map_latex": "\\begin{aligned} F₁(x,y) &= x + y^{2} \\\\ F₂(x,y) &= x^{2} + y \\end{aligned}",
+    "note": "az általános 2D Jacobi-sejtés characteristic 0 fölött nyitott marad"
+  },
+  "exhaustion": null,
+  "proof": null,
+  "provenance": {
+    "worker_sha256": "f3cf9794becab09ca08a0914bca98db0c93e35d1183af767d86550ac0c8bcc02",
+    "source_fingerprint": "ecca371134effba4223828b93a2e49d574de2fa70558aecf75afb97716cfa813",
+    "frontier_signature": "44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f",
+    "entry_function": "search",
+    "worker_source": "from exact_formula_search.generated_runtime import run_generated_search\nFRONTIER = {'kind': 'finite_field_jacobian_lattice', 'degree_extent': 2, 'coefficient_extent': 1, 'support_sets': (((0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (2, 0)), ((0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (2, 0))), 'symmetry_mode': 'none', 'composition_scheme': 'direct', 'elimination_objective': 'determinant_first', 'point_pattern': 'finite_field', 'exact_domain': 'finite_field_extension', 'lane_identifier': 'lane_gf_2_1', 'mutation_lineage': (), 'unique_signature': '44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f', 'extra_parameters': {'prime': 2, 'extension_degree': 1, 'map_families': ['frobenius_pair', 'frobenius_shear', 'frobenius_y_shear', 'frobenius_mixed_shear'], 'family_index': 0, 'coefficient_offset': 0, 'lane_index': 0, 'max_maps': 64, 'max_points': 65536}}\nPROBLEM = {'kind': 'finite_field_jacobian_refutation', 'raw_text': 'cáfold meg a 2D Jacobi-sejtést', 'normalized_tokens': ('cafold', 'meg', 'a', '2d', '2d', 'jacobi', 'sejtest'), 'variables': ('x', 'y'), 'mappings': {'first_component': 'F1', 'second_component': 'F2', 'first_point': 'P', 'second_point': 'Q'}, 'predicates': ('constant_jacobian_determinant_modulo_characteristic', 'collision_at_distinct_finite_field_points', 'map_is_not_injective_over_finite_field'), 'domains': ('finite_field_extension',), 'output_roles': {'first_component': 'F₁', 'second_component': 'F₂', 'first_point': 'P', 'second_point': 'Q'}, 'constraints': (), 'order_bound': None, 'search_limits': {'max_candidates': 4, 'max_instances': 4096, 'max_point_pairs': 512}, 'planar_target': None, 'algebraic_identity': None, 'finite_group_identity': None, 'finite_field_target': {'variable_names': ('x', 'y'), 'characteristic_candidates': (2, 3, 5, 7, 11, 13), 'extension_degree_candidates': (1, 2, 3), 'coefficient_candidates': (1, 2, 3, 4, 5, 6, 7, 8), 'map_families': ('frobenius_pair', 'frobenius_shear', 'frobenius_y_shear', 'frobenius_mixed_shear'), 'determinant_must_be_nonzero_constant': True, 'characteristic_zero_domain': 'characteristic_zero_open'}}\nSOURCE_FINGERPRINT = 'ecca371134effba4223828b93a2e49d574de2fa70558aecf75afb97716cfa813'\ndef search():\n    return run_generated_search(FRONTIER, PROBLEM, SOURCE_FINGERPRINT)\n",
+    "generator": "exact_formula_search.code_generation.generate_search_code",
+    "executor": "exact_formula_search.execution.execute_generated_code",
+    "verifier": "exact_formula_search.verification.verify_candidate",
+    "critic": "exact_formula_search.critique.critique_candidate",
+    "formalizer": "exact_formula_search.formalization.formalize_request"
+  },
+  "audit": [
+    {
+      "id": "float_free",
+      "label": "Exact arithmetic (no floating point)",
+      "status": "pass",
+      "passed": true,
+      "detail": "verification rejected every floating point value"
+    },
+    {
+      "id": "pole_exclusion",
+      "label": "Pole and denominator obligations",
+      "status": "pass",
+      "passed": true,
+      "detail": "denominator obligations were discharged exactly"
+    },
+    {
+      "id": "domain_exclusions",
+      "label": "Declared domain exclusions respected",
+      "status": "pass",
+      "passed": true,
+      "detail": "the certificate avoids every excluded value"
+    },
+    {
+      "id": "field_modulus",
+      "label": "Canonical irreducible field modulus",
+      "status": "pass",
+      "passed": true,
+      "detail": "the declared field is GF(p^k) with the canonical irreducible modulus and a complete element table",
+      "value": "2"
+    },
+    {
+      "id": "determinant_mod_characteristic",
+      "label": "Constant nonzero determinant modulo the characteristic",
+      "status": "pass",
+      "passed": true,
+      "detail": "every nonconstant coefficient vanished modulo p and the constant is nonzero modulo p",
+      "value": "det J = 1 (mod 2)"
+    },
+    {
+      "id": "dual_determinant",
+      "label": "Determinant by two independent paths",
+      "status": "pass",
+      "passed": true,
+      "detail": "derivative-matrix and coefficient-dictionary determinants reduce to the same polynomial over the field"
+    },
+    {
+      "id": "dual_collision",
+      "label": "Collision by two independent field arithmetic paths",
+      "status": "pass",
+      "passed": true,
+      "detail": "monomial and Horner evaluation over GF(p^k) agree at both witnesses"
+    },
+    {
+      "id": "distinct_points",
+      "label": "The two points are provably distinct",
+      "status": "pass",
+      "passed": true,
+      "detail": "a coordinate difference is a nonzero element of GF(p^k)"
+    },
+    {
+      "id": "collision_obligation",
+      "label": "Collision equations discharged",
+      "status": "pass",
+      "passed": true,
+      "detail": "both components agree at the two distinct points, so the map is not injective over the field"
+    },
+    {
+      "id": "refutation_scope",
+      "label": "Refutation scope declared",
+      "status": "pass",
+      "passed": true,
+      "detail": "the certificate states that the refutation is over the finite field and that characteristic 0 remains open",
+      "value": "polynomial maps over the finite field GF(2)"
+    },
+    {
+      "id": "repeat_verification",
+      "label": "Deterministic verifier rerun",
+      "status": "pass",
+      "passed": true,
+      "detail": "a full rerun of the verifier reproduced the certificate"
+    },
+    {
+      "id": "independent_recheck",
+      "label": "Independent recomputation",
+      "status": "pass",
+      "passed": true,
+      "detail": "the critique layer recomputed the certificate with its own code path"
+    },
+    {
+      "id": "critique_clean",
+      "label": "Adversarial review found no blocking issue",
+      "status": "pass",
+      "passed": true,
+      "detail": "no blocking issue remained after the review"
+    },
+    {
+      "id": "source_fingerprint",
+      "label": "Candidate provenance fingerprint",
+      "status": "pass",
+      "passed": true,
+      "detail": "the candidate carries the fingerprint of its generated worker and frontier",
+      "value": "ecca371134ef"
+    },
+    {
+      "id": "worker_sha256",
+      "label": "Generated worker SHA-256",
+      "status": "pass",
+      "passed": true,
+      "detail": "the worker source digest is computed from the exact bytes that ran",
+      "value": "f3cf9794becab09c"
+    }
+  ],
+  "critique": {
+    "passed": true,
+    "issues": []
+  },
+  "verification": {
+    "passed": true,
+    "issues": [],
+    "artifacts": {
+      "field_characteristic": 2,
+      "field_extension_degree": 1,
+      "field_order": 2,
+      "field_modulus": [],
+      "field_modulus_is_canonical": true,
+      "field_size_matches_element_table": true,
+      "sympy_determinant": "-4*x*y + 1",
+      "constant_determinant_mod_characteristic": 1,
+      "determinant_nonzero": true,
+      "nonconstant_coefficients_vanish_mod_characteristic": true,
+      "independent_determinant_check": true,
+      "independent_determinant_polynomial": "1",
+      "collision_differences_zero": true,
+      "independent_collision_check": true,
+      "distinct_points": true,
+      "not_injective_on_finite_field": true,
+      "prime_field_collision": true,
+      "collision_lifts_to_algebraic_closure": true,
+      "denominator_status": true,
+      "domain_exclusions_respected": true,
+      "no_numeric_certification": true,
+      "refutation_scope": "polynomial maps over the finite field GF(2)",
+      "characteristic_zero_status": "open",
+      "image_at_point": [
+        "1",
+        "1"
+      ],
+      "image_at_other": [
+        "1",
+        "1"
+      ],
+      "formal_variables": [
+        "x",
+        "y"
+      ]
+    }
+  },
+  "worker_lines": 6,
+  "max_group_order": null,
+  "exports": {
+    "latex": "\\documentclass{article}\n\\usepackage{amsmath,amssymb}\n\\begin{document}\n\\section*{Exact formula search certificate}\n\n\\begin{equation}\n  F(x,y) = \\left(x + y^{2},\\;x^{2} + y\\right)\\quad\\text{over } GF(2)\n\\end{equation}\n\n\\paragraph{Constant nonzero determinant modulo the characteristic}\n\\[\n  \\det J_F(x,y) = - 4 x y + 1 \\equiv 1 \\not\\equiv 0\n\\]\n\n\\paragraph{Exact collision in the finite field}\n\\[\n  P = \\left(0,\\;1\\right),\\qquad Q = \\left(1,\\;0\\right)\n\\]\n\\[\n  F(P) = F(Q),\\qquad P \\neq Q\n\\]\n\n\\paragraph{Scope}\nThe refutation holds over the finite field GF(2) in positive characteristic. The general two dimensional Jacobian conjecture in characteristic zero remains open.\n\n\\paragraph{Request}\n\\texttt{cáfold meg a 2D Jacobi-sejtést}\n\n\\paragraph{Verification}\n\\begin{itemize}\n  \\item \\checkmark Exact arithmetic (no floating point): verification rejected every floating point value\n  \\item \\checkmark Pole and denominator obligations: denominator obligations were discharged exactly\n  \\item \\checkmark Declared domain exclusions respected: the certificate avoids every excluded value\n  \\item \\checkmark Canonical irreducible field modulus: the declared field is GF(p\\textasciicircum{}k) with the canonical irreducible modulus and a complete element table\n  \\item \\checkmark Constant nonzero determinant modulo the characteristic: every nonconstant coefficient vanished modulo p and the constant is nonzero modulo p\n  \\item \\checkmark Determinant by two independent paths: derivative-matrix and coefficient-dictionary determinants reduce to the same polynomial over the field\n  \\item \\checkmark Collision by two independent field arithmetic paths: monomial and Horner evaluation over GF(p\\textasciicircum{}k) agree at both witnesses\n  \\item \\checkmark The two points are provably distinct: a coordinate difference is a nonzero element of GF(p\\textasciicircum{}k)\n  \\item \\checkmark Collision equations discharged: both components agree at the two distinct points, so the map is not injective over the field\n  \\item \\checkmark Refutation scope declared: the certificate states that the refutation is over the finite field and that characteristic 0 remains open\n  \\item \\checkmark Deterministic verifier rerun: a full rerun of the verifier reproduced the certificate\n  \\item \\checkmark Independent recomputation: the critique layer recomputed the certificate with its own code path\n  \\item \\checkmark Adversarial review found no blocking issue: no blocking issue remained after the review\n  \\item \\checkmark Candidate provenance fingerprint: the candidate carries the fingerprint of its generated worker and frontier\n  \\item \\checkmark Generated worker SHA-256: the worker source digest is computed from the exact bytes that ran\n\\end{itemize}\n\n\\paragraph{Provenance}\n\\texttt{worker sha256: f3cf9794becab09ca08a0914bca98db0c93e35d1183af767d86550ac0c8bcc02}\n\n\\texttt{source fingerprint: ecca371134effba4223828b93a2e49d574de2fa70558aecf75afb97716cfa813}\n\n\\end{document}\n",
+    "sympy": "import sympy as sp\n\nx, y = sp.symbols(\"x y\")\nfirst_expression_text = 'x + y**2'\nsecond_expression_text = 'x**2 + y'\nfirst_expression = sp.sympify(first_expression_text, locals={\"x\": x, \"y\": y})\nsecond_expression = sp.sympify(second_expression_text, locals={\"x\": x, \"y\": y})\nprime = 2\ndegree = 1\nmodulus = []\n\ndef reduce_coefficients(values, prime, modulus):\n    degree = len(modulus)\n    if degree == 0:\n        return [int(values[0]) % prime if values else 0]\n    working = [int(entry) % prime for entry in values]\n    while len(working) > degree:\n        top = working.pop()\n        if top == 0:\n            continue\n        shift = len(working) - degree\n        for index in range(degree):\n            working[shift + index] = (working[shift + index] - top * modulus[index]) % prime\n    while len(working) < degree:\n        working.append(0)\n    return [entry % prime for entry in working]\n\ndef multiply(left, right, prime, modulus):\n    if not modulus:\n        return [(int(left[0]) * int(right[0])) % prime]\n    product = [0] * (len(left) + len(right) - 1)\n    for index, first in enumerate(left):\n        for offset, second in enumerate(right):\n            product[index + offset] = (product[index + offset] + int(first) * int(second)) % prime\n    return reduce_coefficients(product, prime, modulus)\n\ndef element_text(values, prime):\n    terms = []\n    for degree in range(len(values) - 1, -1, -1):\n        coefficient = int(values[degree]) % prime\n        if coefficient == 0:\n            continue\n        if degree == 0:\n            terms.append(str(coefficient))\n        elif degree == 1:\n            terms.append(\"a\" if coefficient == 1 else str(coefficient) + \"*a\")\n        else:\n            terms.append(\"a^\" + str(degree) if coefficient == 1 else str(coefficient) + \"*a^\" + str(degree))\n    return \" + \".join(terms) if terms else \"0\"\n\ndef parse_element(text, prime, degree):\n    cleaned = str(text).replace(\" \", \"\").replace(\"**\", \"^\")\n    values = [0] * degree\n    if not cleaned or cleaned == \"0\":\n        return values\n    for term in cleaned.replace(\"-\", \"+ -\").split(\"+\"):\n        term = term.strip()\n        if not term:\n            continue\n        sign = 1\n        if term.startswith(\"-\"):\n            sign = -1\n            term = term[1:]\n        if \"a\" not in term:\n            values[0] = (values[0] + sign * int(term)) % prime\n            continue\n        head, _, power_text = term.partition(\"a\")\n        head = head.rstrip(\"*\")\n        coefficient = int(head) if head else 1\n        exponent = int(power_text[1:]) if power_text.startswith(\"^\") else 1\n        values[exponent] = (values[exponent] + sign * coefficient) % prime\n    return [entry % prime for entry in values]\n\ndef evaluate(expression, point, prime, degree, modulus):\n    polynomial = sp.Poly(expression, x, y)\n    total = [0] * max(1, degree)\n    for monomial, coefficient in polynomial.terms():\n        term = [int(coefficient) % prime] + [0] * (max(1, degree) - 1)\n        for axis, exponent in enumerate(monomial):\n            for _ in range(int(exponent)):\n                term = multiply(term, point[axis], prime, modulus)\n        size = max(len(total), len(term))\n        total = total + [0] * (size - len(total))\n        term = term + [0] * (size - len(term))\n        total = [((a + b) % prime) for a, b in zip(total, term)]\n    return total\n\npoint_p = [parse_element(\"0\", prime, degree), parse_element(\"1\", prime, degree)]\npoint_q = [parse_element(\"1\", prime, degree), parse_element(\"0\", prime, degree)]\nif point_p == point_q:\n    raise AssertionError(\"the exported witnesses are not distinct\")\njacobian = sp.expand(sp.diff(first_expression, x) * sp.diff(second_expression, y) - sp.diff(first_expression, y) * sp.diff(second_expression, x))\ndeterminant_polynomial = sp.Poly(jacobian, x, y)\nconstant = None\nfor monomial, coefficient in determinant_polynomial.terms():\n    reduced = int(coefficient) % prime\n    if monomial == (0, 0):\n        constant = reduced\n    elif reduced:\n        raise AssertionError(\"the exported determinant is not constant modulo the characteristic\")\nif not constant:\n    raise AssertionError(\"the exported determinant is zero modulo the characteristic\")\nimage_p = [evaluate(first_expression, point_p, prime, degree, modulus), evaluate(second_expression, point_p, prime, degree, modulus)]\nimage_q = [evaluate(first_expression, point_q, prime, degree, modulus), evaluate(second_expression, point_q, prime, degree, modulus)]\nif image_p != image_q:\n    raise AssertionError(\"the exported witnesses do not collide\")\nprint(\"field: GF(\" + str(prime) + (\"^\" + str(degree) if degree > 1 else \"\") + \")\" + \" with \" + str(prime ** degree) + \" elements\")\nprint(\"determinant modulo characteristic:\", constant)\nprint(\"F(P) =\", element_text(image_p[0], prime), \",\", element_text(image_p[1], prime))\nprint(\"F(Q) =\", element_text(image_q[0], prime), \",\", element_text(image_q[1], prime))\nprint(\"finite field Jacobian refutation verified with exact arithmetic\")\n",
+    "json": "{\n  \"kind\": \"counterexample\",\n  \"problem_kind\": \"finite_field_jacobian_refutation\",\n  \"kind_label\": \"finite field Jacobian refutation\",\n  \"query\": \"cáfold meg a 2D Jacobi-sejtést\",\n  \"statement\": {\n    \"text\": \"every polynomial map of the plane over a finite field with constant nonzero Jacobian determinant is injective\",\n    \"latex\": \"\\\\det J(F_1, F_2) \\\\equiv c \\\\neq 0 \\\\;\\\\text{in } \\\\mathbb{F}_{p^k} \\\\;\\\\Longrightarrow\\\\; \\\\forall P, Q \\\\;:\\\\; F_1(P) = F_1(Q),\\\\ F_2(P) = F_2(Q) \\\\;\\\\Longrightarrow\\\\; P = Q\"\n  },\n  \"headline\": \"over GF(2): P = (0, 1) differs from Q = (1, 0) while F(P) = F(Q) = (1, 1)\",\n  \"headline_latex\": \"\\\\left(0, 1\\\\right) \\\\neq \\\\left(1, 0\\\\right),\\\\quad F(P) = F(Q) = \\\\left(1, 1\\\\right)\",\n  \"formatted_text\": \"field: GF(2) with 2 elements\\nmodulus: none: GF(2) is the prime field\\nF₁(x,y) = x + y**2\\nF₂(x,y) = x**2 + y\\nP = (0, 1)\\nQ = (1, 0)\\nF(P) = (1, 1) = F(Q)\\ndet J = 1 (mod 2)\\nscope: polynomial maps over the finite field GF(2) in positive characteristic\\nlimitation: the general two dimensional Jacobian conjecture in characteristic 0 remains open and is not refuted by this witness\",\n  \"generated_at\": \"2026-10-07T03:36:47Z\",\n  \"runtime_seconds\": \"0.37\",\n  \"budget\": {\n    \"time_seconds\": \"25.00\",\n    \"max_frontier_visits\": 40,\n    \"max_verified_candidates\": 120,\n    \"max_mutation_rounds\": 60,\n    \"max_candidates_per_frontier\": 4,\n    \"max_instances_per_solve\": 4096,\n    \"max_point_pairs\": 512,\n    \"execution_timeout_seconds\": \"12.00\"\n  },\n  \"statistics\": {\n    \"frontiers_examined\": 1,\n    \"candidates_verified\": 1,\n    \"mutation_rounds\": 0,\n    \"queued_frontiers\": 18,\n    \"repairs\": 0,\n    \"executions\": 1,\n    \"lane_count\": 1,\n    \"lanes\": [\n      {\n        \"lane\": \"lane_gf_2_1\",\n        \"visits\": 1,\n        \"candidates\": 0,\n        \"repairs\": 0\n      }\n    ],\n    \"repair_reasons\": [],\n    \"elapsed_seconds\": \"0.37\"\n  },\n  \"formalization\": {\n    \"problem_kind\": \"finite_field_jacobian_refutation\",\n    \"kind\": \"finite_field_jacobian_refutation\",\n    \"kind_label\": \"finite field Jacobian refutation\",\n    \"statement\": {\n      \"text\": \"every polynomial map of the plane over a finite field with constant nonzero Jacobian determinant is injective\",\n      \"latex\": \"\\\\det J(F_1, F_2) \\\\equiv c \\\\neq 0 \\\\;\\\\text{in } \\\\mathbb{F}_{p^k} \\\\;\\\\Longrightarrow\\\\; \\\\forall P, Q \\\\;:\\\\; F_1(P) = F_1(Q),\\\\ F_2(P) = F_2(Q) \\\\;\\\\Longrightarrow\\\\; P = Q\"\n    },\n    \"policy_latex\": \"\\\\text{find an exact assignment that refutes the identity}\",\n    \"variables\": [\n      {\n        \"name\": \"x\",\n        \"latex\": \"x\"\n      },\n      {\n        \"name\": \"y\",\n        \"latex\": \"y\"\n      }\n    ],\n    \"constraints\": [],\n    \"domains\": [\n      \"finite_field_extension\"\n    ],\n    \"normalized_tokens\": [\n      \"cafold\",\n      \"meg\",\n      \"a\",\n      \"2d\",\n      \"2d\",\n      \"jacobi\",\n      \"sejtest\"\n    ],\n    \"output_roles\": {\n      \"first_component\": \"F₁\",\n      \"second_component\": \"F₂\",\n      \"first_point\": \"P\",\n      \"second_point\": \"Q\"\n    },\n    \"budget\": {\n      \"time_seconds\": \"25.00\",\n      \"max_frontier_visits\": 40,\n      \"max_verified_candidates\": 120,\n      \"max_mutation_rounds\": 60,\n      \"max_candidates_per_frontier\": 4,\n      \"max_instances_per_solve\": 4096,\n      \"max_point_pairs\": 512,\n      \"execution_timeout_seconds\": \"12.00\"\n    },\n    \"left_latex\": \"\",\n    \"right_latex\": \"\",\n    \"left_expression\": \"\",\n    \"right_expression\": \"\",\n    \"left_word\": \"\",\n    \"right_word\": \"\",\n    \"domain_obligations\": [],\n    \"order_bound\": null,\n    \"order_bounds\": null,\n    \"components\": [],\n    \"point_roles\": [],\n    \"determinant_requirement\": \"\\\\det J \\\\equiv c \\\\neq 0 \\\\;(\\\\mathrm{mod}\\\\; p)\",\n    \"finite_field_ladder\": [\n      {\n        \"prime\": 2,\n        \"degree\": 1,\n        \"field\": \"GF(2^1)\",\n        \"elements\": 2\n      },\n      {\n        \"prime\": 2,\n        \"degree\": 2,\n        \"field\": \"GF(2^2)\",\n        \"elements\": 4\n      },\n      {\n        \"prime\": 2,\n        \"degree\": 3,\n        \"field\": \"GF(2^3)\",\n        \"elements\": 8\n      },\n      {\n        \"prime\": 3,\n        \"degree\": 1,\n        \"field\": \"GF(3^1)\",\n        \"elements\": 3\n      },\n      {\n        \"prime\": 3,\n        \"degree\": 2,\n        \"field\": \"GF(3^2)\",\n        \"elements\": 9\n      },\n      {\n        \"prime\": 3,\n        \"degree\": 3,\n        \"field\": \"GF(3^3)\",\n        \"elements\": 27\n      },\n      {\n        \"prime\": 5,\n        \"degree\": 1,\n        \"field\": \"GF(5^1)\",\n        \"elements\": 5\n      },\n      {\n        \"prime\": 5,\n        \"degree\": 2,\n        \"field\": \"GF(5^2)\",\n        \"elements\": 25\n      },\n      {\n        \"prime\": 5,\n        \"degree\": 3,\n        \"field\": \"GF(5^3)\",\n        \"elements\": 125\n      },\n      {\n        \"prime\": 7,\n        \"degree\": 1,\n        \"field\": \"GF(7^1)\",\n        \"elements\": 7\n      },\n      {\n        \"prime\": 7,\n        \"degree\": 2,\n        \"field\": \"GF(7^2)\",\n        \"elements\": 49\n      },\n      {\n        \"prime\": 7,\n        \"degree\": 3,\n        \"field\": \"GF(7^3)\",\n        \"elements\": 343\n      },\n      {\n        \"prime\": 11,\n        \"degree\": 1,\n        \"field\": \"GF(11^1)\",\n        \"elements\": 11\n      },\n      {\n        \"prime\": 11,\n        \"degree\": 2,\n        \"field\": \"GF(11^2)\",\n        \"elements\": 121\n      },\n      {\n        \"prime\": 11,\n        \"degree\": 3,\n        \"field\": \"GF(11^3)\",\n        \"elements\": 1331\n      },\n      {\n        \"prime\": 13,\n        \"degree\": 1,\n        \"field\": \"GF(13^1)\",\n        \"elements\": 13\n      },\n      {\n        \"prime\": 13,\n        \"degree\": 2,\n        \"field\": \"GF(13^2)\",\n        \"elements\": 169\n      },\n      {\n        \"prime\": 13,\n        \"degree\": 3,\n        \"field\": \"GF(13^3)\",\n        \"elements\": 2197\n      }\n    ],\n    \"map_families\": [\n      \"frobenius_pair\",\n      \"frobenius_shear\",\n      \"frobenius_y_shear\",\n      \"frobenius_mixed_shear\"\n    ],\n    \"characteristic_zero_status\": \"characteristic_zero_open\",\n    \"determinant_latex\": \"\\\\det J(F_1, F_2) = \\\\frac{\\\\partial F_1}{\\\\partial x}\\\\frac{\\\\partial F_2}{\\\\partial y} - \\\\frac{\\\\partial F_1}{\\\\partial y}\\\\frac{\\\\partial F_2}{\\\\partial x} \\\\equiv c \\\\neq 0\",\n    \"field_note\": \"a keresés véges testek fölött cáfolja a 2D Jacobi-sejtést; a characteristic 0 eset nyitott marad\"\n  },\n  \"frontier\": {\n    \"signature\": \"44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f\",\n    \"short_signature\": \"44c4551fdcdb\",\n    \"lane\": \"lane_gf_2_1\",\n    \"kind\": \"finite_field_jacobian_lattice\",\n    \"degree_extent\": 2,\n    \"coefficient_extent\": 1,\n    \"support_sizes\": [\n      6,\n      6\n    ],\n    \"symmetry_mode\": \"none\",\n    \"composition_scheme\": \"direct\",\n    \"elimination_objective\": \"determinant_first\",\n    \"point_pattern\": \"finite_field\",\n    \"exact_domain\": \"finite_field_extension\",\n    \"mutation_lineage\": [],\n    \"mutation_depth\": 0,\n    \"solver_route\": \"solve\",\n    \"term_order\": \"lex\",\n    \"repair_action\": \"\",\n    \"independent_check_level\": 0,\n    \"prime\": 2,\n    \"max_order\": null,\n    \"denominator_equations\": false,\n    \"frame\": {\n      \"degree_extent\": 2,\n      \"coefficient_extent\": 1,\n      \"symmetry_mode\": \"none\",\n      \"composition_scheme\": \"direct\",\n      \"elimination_objective\": \"determinant_first\",\n      \"point_pattern\": \"finite_field\",\n      \"exact_domain\": \"finite_field_extension\",\n      \"solver_route\": \"solve\"\n    }\n  },\n  \"algebraic\": null,\n  \"group\": null,\n  \"planar\": null,\n  \"finite_field\": {\n    \"field_label\": \"GF(2)\",\n    \"field_characteristic\": 2,\n    \"field_extension_degree\": 1,\n    \"field_order\": 2,\n    \"field_modulus\": [],\n    \"field_modulus_text\": \"none: GF(2) is the prime field\",\n    \"field_modulus_latex\": \"\\\\text{prime field}\",\n    \"components\": {\n      \"F₁\": \"x + y^{2}\",\n      \"F₂\": \"x^{2} + y\"\n    },\n    \"component_rows\": [\n      {\n        \"key\": \"F1\",\n        \"label\": \"F₁\",\n        \"expression\": \"x + y**2\",\n        \"latex\": \"x + y^{2}\"\n      },\n      {\n        \"key\": \"F2\",\n        \"label\": \"F₂\",\n        \"expression\": \"x**2 + y\",\n        \"latex\": \"x^{2} + y\"\n      }\n    ],\n    \"point_p\": [\n      \"0\",\n      \"1\"\n    ],\n    \"point_q\": [\n      \"1\",\n      \"0\"\n    ],\n    \"point_p_latex\": \"\\\\left(0, 1\\\\right)\",\n    \"point_q_latex\": \"\\\\left(1, 0\\\\right)\",\n    \"points\": [\n      {\n        \"key\": \"P\",\n        \"coordinates\": [\n          \"0\",\n          \"1\"\n        ],\n        \"latex\": \"\\\\left(0, 1\\\\right)\",\n        \"coordinates_latex\": [\n          \"0\",\n          \"1\"\n        ]\n      },\n      {\n        \"key\": \"Q\",\n        \"coordinates\": [\n          \"1\",\n          \"0\"\n        ],\n        \"latex\": \"\\\\left(1, 0\\\\right)\",\n        \"coordinates_latex\": [\n          \"1\",\n          \"0\"\n        ]\n      }\n    ],\n    \"image_at_point\": [\n      \"1\",\n      \"1\"\n    ],\n    \"image_at_other\": [\n      \"1\",\n      \"1\"\n    ],\n    \"image_latex\": \"\\\\left(1, 1\\\\right)\",\n    \"collision_rows\": [\n      {\n        \"label\": \"F₁\",\n        \"at_point\": \"1\",\n        \"at_other\": \"1\",\n        \"difference\": \"0\",\n        \"equal\": true\n      },\n      {\n        \"label\": \"F₂\",\n        \"at_point\": \"1\",\n        \"at_other\": \"1\",\n        \"difference\": \"0\",\n        \"equal\": true\n      }\n    ],\n    \"collision_differences_zero\": true,\n    \"jacobian_determinant\": \"-4*x*y + 1\",\n    \"jacobian_determinant_latex\": \"- 4 x y + 1\",\n    \"independent_determinant\": \"1\",\n    \"independent_determinant_latex\": \"1\",\n    \"determinant_constant_mod_characteristic\": 1,\n    \"determinant_constant_latex\": \"\\\\det J \\\\equiv 1 \\\\;(\\\\mathrm{mod}\\\\; 2)\",\n    \"determinant_nonzero\": true,\n    \"nonconstant_coefficients_vanish_mod_characteristic\": true,\n    \"independent_determinant_check\": true,\n    \"independent_collision_check\": true,\n    \"distinct_points\": true,\n    \"not_injective_on_finite_field\": true,\n    \"prime_field_collision\": true,\n    \"collision_lifts_to_algebraic_closure\": true,\n    \"refutation_scope\": \"polynomial maps over the finite field GF(2)\",\n    \"characteristic_zero_status\": \"open\",\n    \"field_modulus_is_canonical\": true,\n    \"runtime_route\": \"finite_field_jacobian_lattice\",\n    \"runtime_determinant\": \"-4*x*y + 1\",\n    \"map_family\": \"frobenius_pair\",\n    \"frontier_signature\": \"44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f\",\n    \"map_latex\": \"\\\\begin{aligned} F₁(x,y) &= x + y^{2} \\\\\\\\ F₂(x,y) &= x^{2} + y \\\\end{aligned}\",\n    \"note\": \"az általános 2D Jacobi-sejtés characteristic 0 fölött nyitott marad\"\n  },\n  \"exhaustion\": null,\n  \"proof\": null,\n  \"provenance\": {\n    \"worker_sha256\": \"f3cf9794becab09ca08a0914bca98db0c93e35d1183af767d86550ac0c8bcc02\",\n    \"source_fingerprint\": \"ecca371134effba4223828b93a2e49d574de2fa70558aecf75afb97716cfa813\",\n    \"frontier_signature\": \"44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f\",\n    \"entry_function\": \"search\",\n    \"worker_source\": \"from exact_formula_search.generated_runtime import run_generated_search\\nFRONTIER = {'kind': 'finite_field_jacobian_lattice', 'degree_extent': 2, 'coefficient_extent': 1, 'support_sets': (((0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (2, 0)), ((0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (2, 0))), 'symmetry_mode': 'none', 'composition_scheme': 'direct', 'elimination_objective': 'determinant_first', 'point_pattern': 'finite_field', 'exact_domain': 'finite_field_extension', 'lane_identifier': 'lane_gf_2_1', 'mutation_lineage': (), 'unique_signature': '44c4551fdcdb173a9d35e5ba8d16cb4fc97bbbf5a542bf26580d6951544f9d2f', 'extra_parameters': {'prime': 2, 'extension_degree': 1, 'map_families': ['frobenius_pair', 'frobenius_shear', 'frobenius_y_shear', 'frobenius_mixed_shear'], 'family_index': 0, 'coefficient_offset': 0, 'lane_index': 0, 'max_maps': 64, 'max_points': 65536}}\\nPROBLEM = {'kind': 'finite_field_jacobian_refutation', 'raw_text': 'cáfold meg a 2D Jacobi-sejtést', 'normalized_tokens': ('cafold', 'meg', 'a', '2d', '2d', 'jacobi', 'sejtest'), 'variables': ('x', 'y'), 'mappings': {'first_component': 'F1', 'second_component': 'F2', 'first_point': 'P', 'second_point': 'Q'}, 'predicates': ('constant_jacobian_determinant_modulo_characteristic', 'collision_at_distinct_finite_field_points', 'map_is_not_injective_over_finite_field'), 'domains': ('finite_field_extension',), 'output_roles': {'first_component': 'F₁', 'second_component': 'F₂', 'first_point': 'P', 'second_point': 'Q'}, 'constraints': (), 'order_bound': None, 'search_limits': {'max_candidates': 4, 'max_instances': 4096, 'max_point_pairs': 512}, 'planar_target': None, 'algebraic_identity': None, 'finite_group_identity': None, 'finite_field_target': {'variable_names': ('x', 'y'), 'characteristic_candidates': (2, 3, 5, 7, 11, 13), 'extension_degree_candidates': (1, 2, 3), 'coefficient_candidates': (1, 2, 3, 4, 5, 6, 7, 8), 'map_families': ('frobenius_pair', 'frobenius_shear', 'frobenius_y_shear', 'frobenius_mixed_shear'), 'determinant_must_be_nonzero_constant': True, 'characteristic_zero_domain': 'characteristic_zero_open'}}\\nSOURCE_FINGERPRINT = 'ecca371134effba4223828b93a2e49d574de2fa70558aecf75afb97716cfa813'\\ndef search():\\n    return run_generated_search(FRONTIER, PROBLEM, SOURCE_FINGERPRINT)\\n\",\n    \"generator\": \"exact_formula_search.code_generation.generate_search_code\",\n    \"executor\": \"exact_formula_search.execution.execute_generated_code\",\n    \"verifier\": \"exact_formula_search.verification.verify_candidate\",\n    \"critic\": \"exact_formula_search.critique.critique_candidate\",\n    \"formalizer\": \"exact_formula_search.formalization.formalize_request\"\n  },\n  \"audit\": [\n    {\n      \"id\": \"float_free\",\n      \"label\": \"Exact arithmetic (no floating point)\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"verification rejected every floating point value\"\n    },\n    {\n      \"id\": \"pole_exclusion\",\n      \"label\": \"Pole and denominator obligations\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"denominator obligations were discharged exactly\"\n    },\n    {\n      \"id\": \"domain_exclusions\",\n      \"label\": \"Declared domain exclusions respected\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"the certificate avoids every excluded value\"\n    },\n    {\n      \"id\": \"field_modulus\",\n      \"label\": \"Canonical irreducible field modulus\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"the declared field is GF(p^k) with the canonical irreducible modulus and a complete element table\",\n      \"value\": \"2\"\n    },\n    {\n      \"id\": \"determinant_mod_characteristic\",\n      \"label\": \"Constant nonzero determinant modulo the characteristic\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"every nonconstant coefficient vanished modulo p and the constant is nonzero modulo p\",\n      \"value\": \"det J = 1 (mod 2)\"\n    },\n    {\n      \"id\": \"dual_determinant\",\n      \"label\": \"Determinant by two independent paths\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"derivative-matrix and coefficient-dictionary determinants reduce to the same polynomial over the field\"\n    },\n    {\n      \"id\": \"dual_collision\",\n      \"label\": \"Collision by two independent field arithmetic paths\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"monomial and Horner evaluation over GF(p^k) agree at both witnesses\"\n    },\n    {\n      \"id\": \"distinct_points\",\n      \"label\": \"The two points are provably distinct\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"a coordinate difference is a nonzero element of GF(p^k)\"\n    },\n    {\n      \"id\": \"collision_obligation\",\n      \"label\": \"Collision equations discharged\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"both components agree at the two distinct points, so the map is not injective over the field\"\n    },\n    {\n      \"id\": \"refutation_scope\",\n      \"label\": \"Refutation scope declared\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"the certificate states that the refutation is over the finite field and that characteristic 0 remains open\",\n      \"value\": \"polynomial maps over the finite field GF(2)\"\n    },\n    {\n      \"id\": \"repeat_verification\",\n      \"label\": \"Deterministic verifier rerun\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"a full rerun of the verifier reproduced the certificate\"\n    },\n    {\n      \"id\": \"independent_recheck\",\n      \"label\": \"Independent recomputation\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"the critique layer recomputed the certificate with its own code path\"\n    },\n    {\n      \"id\": \"critique_clean\",\n      \"label\": \"Adversarial review found no blocking issue\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"no blocking issue remained after the review\"\n    },\n    {\n      \"id\": \"source_fingerprint\",\n      \"label\": \"Candidate provenance fingerprint\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"the candidate carries the fingerprint of its generated worker and frontier\",\n      \"value\": \"ecca371134ef\"\n    },\n    {\n      \"id\": \"worker_sha256\",\n      \"label\": \"Generated worker SHA-256\",\n      \"status\": \"pass\",\n      \"passed\": true,\n      \"detail\": \"the worker source digest is computed from the exact bytes that ran\",\n      \"value\": \"f3cf9794becab09c\"\n    }\n  ],\n  \"critique\": {\n    \"passed\": true,\n    \"issues\": []\n  },\n  \"verification\": {\n    \"passed\": true,\n    \"issues\": [],\n    \"artifacts\": {\n      \"field_characteristic\": 2,\n      \"field_extension_degree\": 1,\n      \"field_order\": 2,\n      \"field_modulus\": [],\n      \"field_modulus_is_canonical\": true,\n      \"field_size_matches_element_table\": true,\n      \"sympy_determinant\": \"-4*x*y + 1\",\n      \"constant_determinant_mod_characteristic\": 1,\n      \"determinant_nonzero\": true,\n      \"nonconstant_coefficients_vanish_mod_characteristic\": true,\n      \"independent_determinant_check\": true,\n      \"independent_determinant_polynomial\": \"1\",\n      \"collision_differences_zero\": true,\n      \"independent_collision_check\": true,\n      \"distinct_points\": true,\n      \"not_injective_on_finite_field\": true,\n      \"prime_field_collision\": true,\n      \"collision_lifts_to_algebraic_closure\": true,\n      \"denominator_status\": true,\n      \"domain_exclusions_respected\": true,\n      \"no_numeric_certification\": true,\n      \"refutation_scope\": \"polynomial maps over the finite field GF(2)\",\n      \"characteristic_zero_status\": \"open\",\n      \"image_at_point\": [\n        \"1\",\n        \"1\"\n      ],\n      \"image_at_other\": [\n        \"1\",\n        \"1\"\n      ],\n      \"formal_variables\": [\n        \"x\",\n        \"y\"\n      ]\n    }\n  },\n  \"worker_lines\": 6,\n  \"max_group_order\": null\n}",
+    "base_filename": "exact-formula-search-cáfold-meg-a-2D-Jacobi-sejtést",
+    "kind": "counterexample"
+  }
+}

@@ -7,6 +7,7 @@ from typing import Any
 from .models import (
     AlgebraicIdentityTarget,
     ExactDomain,
+    FiniteFieldJacobiTarget,
     FiniteGroupIdentityTarget,
     FormalizationError,
     PlanarMapTarget,
@@ -198,6 +199,24 @@ def _recognizes_planar_refutation(tokens: tuple[str, ...]) -> bool:
     has_assertion_word = _has_close_token(tokens, ("sejtes", "sejtest", "sejtestet", "conjecture"))
     has_dimension = _has_planar_dimension(tokens)
     return bool(has_refutation and has_named_request and has_assertion_word and has_dimension)
+
+
+def _requests_characteristic_zero(tokens: tuple[str, ...]) -> bool:
+    joined = " ".join(tokens)
+    for phrase in ("characteristic zero", "char 0", "char0", "charact 0", "zero characteristic"):
+        if phrase in joined:
+            return True
+    if "charzero" in tokens or "charzero" in joined:
+        return True
+    if "q" in tokens and "over" in tokens:
+        return True
+    return _has_close_token(tokens, ("rational", "racionalis", "racional", "complex", "komplex"))
+
+
+def _recognizes_finite_field_jacobi_refutation(tokens: tuple[str, ...]) -> bool:
+    if not _recognizes_planar_refutation(tokens):
+        return False
+    return not _requests_characteristic_zero(tokens)
 
 
 def _split_equality(raw_text: str) -> tuple[str, str] | None:
@@ -485,6 +504,24 @@ def formalize_request(raw_text: str) -> ProblemSpec:
     tokens = _normalized_tokens(raw)
     constraints = _declared_constraints(raw)
     order_bound = _declared_order_bound(raw)
+    if _recognizes_finite_field_jacobi_refutation(tokens):
+        target = FiniteFieldJacobiTarget()
+        return ProblemSpec(
+            kind=ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION,
+            raw_text=raw,
+            normalized_tokens=tokens,
+            variables=("x", "y"),
+            mappings={"first_component": "F1", "second_component": "F2", "first_point": "P", "second_point": "Q"},
+            predicates=(
+                "constant_jacobian_determinant_modulo_characteristic",
+                "collision_at_distinct_finite_field_points",
+                "map_is_not_injective_over_finite_field",
+            ),
+            domains=(ExactDomain.FINITE_FIELD_EXTENSION,),
+            output_roles={"first_component": "F₁", "second_component": "F₂", "first_point": "P", "second_point": "Q"},
+            constraints=constraints,
+            finite_field_target=target,
+        )
     if _recognizes_planar_refutation(tokens):
         target = PlanarMapTarget()
         return ProblemSpec(
@@ -543,4 +580,11 @@ def describe_formalization(specification: ProblemSpec) -> dict[str, Any]:
         payload["left_word"] = specification.finite_group_identity.left_word
         payload["right_word"] = specification.finite_group_identity.right_word
         payload["max_order"] = specification.finite_group_identity.max_order
+    if specification.finite_field_target is not None:
+        payload["finite_field"] = {
+            "characteristic_candidates": list(specification.finite_field_target.characteristic_candidates),
+            "extension_degree_candidates": list(specification.finite_field_target.extension_degree_candidates),
+            "map_families": list(specification.finite_field_target.map_families),
+            "characteristic_zero_domain": specification.finite_field_target.characteristic_zero_domain,
+        }
     return payload

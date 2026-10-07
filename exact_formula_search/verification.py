@@ -20,6 +20,16 @@ from .symbolic_tools import (
     exact_parse_expression,
     exact_zero,
     expression_domain_obligations,
+    finite_field_add,
+    finite_field_element_from_text,
+    finite_field_element_text,
+    finite_field_elements,
+    finite_field_is_zero,
+    finite_field_multiply,
+    finite_field_negate,
+    finite_field_power,
+    finite_field_reduce,
+    irreducible_modulus_polynomial,
     is_exact_algebraic_value,
     polynomial_coefficient_dictionary,
 )
@@ -29,6 +39,8 @@ def verify_candidate(specification: ProblemSpec, candidate: Candidate) -> Verifi
     try:
         if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
             return _verify_planar(specification, candidate)
+        if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+            return _verify_finite_field_jacobian(specification, candidate)
         if specification.kind == ProblemKind.FINITE_GROUP_IDENTITY_COUNTERMODEL:
             return _verify_finite_group(specification, candidate)
         return _verify_algebraic_identity(specification, candidate)
@@ -70,6 +82,239 @@ def _formula_obligations(candidate: Candidate, text: str) -> tuple[sp.Expr, ...]
             except Exception:
                 continue
     return tuple(collected)
+
+
+def _coefficient_dictionary_determinant(
+    first_coefficients: Mapping[tuple[int, int], Any],
+    second_coefficients: Mapping[tuple[int, int], Any],
+) -> dict[tuple[int, int], int]:
+    first_x: dict[tuple[int, int], int] = {}
+    first_y: dict[tuple[int, int], int] = {}
+    second_x: dict[tuple[int, int], int] = {}
+    second_y: dict[tuple[int, int], int] = {}
+    for monomial, coefficient in first_coefficients.items():
+        value = int(coefficient)
+        if monomial[0]:
+            key = (monomial[0] - 1, monomial[1])
+            first_x[key] = first_x.get(key, 0) + monomial[0] * value
+        if monomial[1]:
+            key = (monomial[0], monomial[1] - 1)
+            first_y[key] = first_y.get(key, 0) + monomial[1] * value
+    for monomial, coefficient in second_coefficients.items():
+        value = int(coefficient)
+        if monomial[0]:
+            key = (monomial[0] - 1, monomial[1])
+            second_x[key] = second_x.get(key, 0) + monomial[0] * value
+        if monomial[1]:
+            key = (monomial[0], monomial[1] - 1)
+            second_y[key] = second_y.get(key, 0) + monomial[1] * value
+    difference: dict[tuple[int, int], int] = {}
+    for left, left_value in first_x.items():
+        for right, right_value in second_y.items():
+            key = (left[0] + right[0], left[1] + right[1])
+            difference[key] = difference.get(key, 0) + left_value * right_value
+    for left, left_value in first_y.items():
+        for right, right_value in second_x.items():
+            key = (left[0] + right[0], left[1] + right[1])
+            difference[key] = difference.get(key, 0) - left_value * right_value
+    return {key: value for key, value in difference.items() if value}
+
+
+def _polynomial_mod_characteristic_constants(coefficients: Mapping[tuple[int, int], int], prime: int) -> tuple[int, bool]:
+    constant = 0
+    nonconstant_vanish = True
+    for monomial, coefficient in coefficients.items():
+        reduced = int(coefficient) % int(prime)
+        if monomial == (0, 0):
+            constant = reduced
+        elif reduced:
+            nonconstant_vanish = False
+    return constant, nonconstant_vanish
+
+
+def _monomial_field_evaluation(coefficients: Mapping[tuple[int, int], int], point: Sequence[Sequence[int]], prime: int, modulus: Sequence[int]) -> tuple[int, ...]:
+    x_value = tuple(int(item) for item in point[0])
+    y_value = tuple(int(item) for item in point[1])
+    total = finite_field_reduce((0,), prime, modulus)
+    for monomial, coefficient in coefficients.items():
+        reduced = int(coefficient) % int(prime)
+        if not reduced:
+            continue
+        term = finite_field_reduce((reduced,), prime, modulus)
+        if monomial[0]:
+            term = finite_field_multiply(term, finite_field_power(x_value, monomial[0], prime, modulus), prime, modulus)
+        if monomial[1]:
+            term = finite_field_multiply(term, finite_field_power(y_value, monomial[1], prime, modulus), prime, modulus)
+        total = finite_field_add(total, term, prime)
+    return finite_field_reduce(total, prime, modulus)
+
+
+def _horner_field_evaluation(coefficients: Mapping[tuple[int, int], int], point: Sequence[Sequence[int]], prime: int, modulus: Sequence[int]) -> tuple[int, ...]:
+    x_value = finite_field_reduce(tuple(int(item) for item in point[0]), prime, modulus)
+    y_value = finite_field_reduce(tuple(int(item) for item in point[1]), prime, modulus)
+    maximum_x = max((monomial[0] for monomial in coefficients), default=0)
+    maximum_y = max((monomial[1] for monomial in coefficients), default=0)
+    outer = finite_field_reduce((0,), prime, modulus)
+    for y_degree in range(maximum_y, -1, -1):
+        inner = finite_field_reduce((0,), prime, modulus)
+        for x_degree in range(maximum_x, -1, -1):
+            coefficient = int(coefficients.get((x_degree, y_degree), 0)) % int(prime)
+            inner = finite_field_multiply(inner, x_value, prime, modulus)
+            if coefficient:
+                inner = finite_field_add(inner, finite_field_reduce((coefficient,), prime, modulus), prime)
+        outer = finite_field_multiply(outer, y_value, prime, modulus)
+        outer = finite_field_add(outer, inner, prime)
+    return finite_field_reduce(outer, prime, modulus)
+
+
+def _verify_finite_field_jacobian(specification: ProblemSpec, candidate: Candidate) -> VerificationResult:
+    issues: list[str] = []
+    artifacts = dict(candidate.exact_derivation_artifacts)
+    first_text = _formula(candidate, ("F1", "F₁", "first"))
+    second_text = _formula(candidate, ("F2", "F₂", "second"))
+    point_text = _point(candidate, "P")
+    other_text = _point(candidate, "Q")
+    try:
+        prime = int(artifacts.get("field_characteristic"))
+        degree = int(artifacts.get("field_extension_degree"))
+    except (TypeError, ValueError):
+        return VerificationResult(False, candidate, ("missing_finite_field_declaration",))
+    if prime < 2 or degree < 1:
+        return VerificationResult(False, candidate, ("invalid_finite_field_declaration",))
+    try:
+        modulus = irreducible_modulus_polynomial(prime, degree)
+    except Exception as exception:
+        return VerificationResult(False, candidate, ("irreducible_modulus_unavailable:" + type(exception).__name__,))
+    recorded_modulus = artifacts.get("field_modulus")
+    modulus_matches = recorded_modulus is not None and tuple(int(item) for item in recorded_modulus) == tuple(modulus)
+    if not modulus_matches:
+        issues.append("recorded_modulus_is_not_the_canonical_irreducible_polynomial")
+    elements = finite_field_elements(prime, degree)
+    field_order = prime ** degree
+    if int(artifacts.get("field_order", 0) or 0) != field_order:
+        issues.append("field_order_mismatch")
+    first = exact_parse_expression(first_text, ("x", "y"))
+    second = exact_parse_expression(second_text, ("x", "y"))
+    if first.has(sp.Float) or second.has(sp.Float):
+        issues.append("floating_number_present")
+    x_symbol, y_symbol = sp.symbols("x y")
+    try:
+        first_coefficients = polynomial_coefficient_dictionary(first, (x_symbol, y_symbol))
+        second_coefficients = polynomial_coefficient_dictionary(second, (x_symbol, y_symbol))
+    except Exception as exception:
+        return VerificationResult(False, candidate, ("non_polynomial_component:" + type(exception).__name__,))
+    for coefficient in tuple(first_coefficients.values()) + tuple(second_coefficients.values()):
+        if not getattr(coefficient, "is_Integer", False):
+            issues.append("non_integer_coefficient_in_positive_characteristic")
+    determinant_sympy = sp.expand(
+        sp.diff(first, x_symbol) * sp.diff(second, y_symbol) - sp.diff(first, y_symbol) * sp.diff(second, x_symbol)
+    )
+    determinant_coefficients = polynomial_coefficient_dictionary(determinant_sympy, (x_symbol, y_symbol))
+    constant, nonconstant_vanish = _polynomial_mod_characteristic_constants(
+        {monomial: int(value) for monomial, value in determinant_coefficients.items()}, prime
+    )
+    if not nonconstant_vanish:
+        issues.append("nonconstant_determinant_coefficient_survives_modulo_characteristic")
+    if constant % prime == 0:
+        issues.append("zero_or_undecided_constant_determinant_modulo_characteristic")
+    independent_determinant = _coefficient_dictionary_determinant(first_coefficients, second_coefficients)
+    independent_reduced = {
+        monomial: int(value) % prime for monomial, value in independent_determinant.items() if int(value) % prime
+    }
+    recorded_reduced = {
+        monomial: int(value) % prime
+        for monomial, value in determinant_coefficients.items()
+        if int(value) % prime
+    }
+    if independent_reduced != recorded_reduced:
+        issues.append("determinant_paths_disagree")
+    try:
+        point = finite_field_element_from_text(point_text[0], prime, degree)
+        point_second = finite_field_element_from_text(point_text[1], prime, degree)
+        other = finite_field_element_from_text(other_text[0], prime, degree)
+        other_second = finite_field_element_from_text(other_text[1], prime, degree)
+    except Exception as exception:
+        return VerificationResult(False, candidate, ("unparsable_finite_field_point:" + type(exception).__name__,))
+    point_pair = (point, point_second)
+    other_pair = (other, other_second)
+    for value in point_pair + other_pair:
+        try:
+            round_trip = finite_field_element_from_text(finite_field_element_text(value, prime), prime, degree)
+        except Exception:
+            round_trip = None
+        if round_trip != tuple(value):
+            issues.append("field_element_text_round_trip_failed")
+            break
+    distinct = any(not finite_field_is_zero(finite_field_add(left, finite_field_negate(right, prime), prime), prime) for left, right in zip(point_pair, other_pair))
+    if not distinct:
+        issues.append("points_not_proved_distinct")
+    first_reduced = {monomial: int(value) % prime for monomial, value in first_coefficients.items()}
+    second_reduced = {monomial: int(value) % prime for monomial, value in second_coefficients.items()}
+    evaluations = {
+        "first_point_monomial": _monomial_field_evaluation(first_reduced, point_pair, prime, modulus),
+        "first_point_horner": _horner_field_evaluation(first_reduced, point_pair, prime, modulus),
+        "first_other_monomial": _monomial_field_evaluation(first_reduced, other_pair, prime, modulus),
+        "first_other_horner": _horner_field_evaluation(first_reduced, other_pair, prime, modulus),
+        "second_point_monomial": _monomial_field_evaluation(second_reduced, point_pair, prime, modulus),
+        "second_point_horner": _horner_field_evaluation(second_reduced, point_pair, prime, modulus),
+        "second_other_monomial": _monomial_field_evaluation(second_reduced, other_pair, prime, modulus),
+        "second_other_horner": _horner_field_evaluation(second_reduced, other_pair, prime, modulus),
+    }
+    if evaluations["first_point_monomial"] != evaluations["first_point_horner"] or evaluations["second_point_monomial"] != evaluations["second_point_horner"]:
+        issues.append("first_component_point_evaluation_paths_disagree")
+    if evaluations["first_other_monomial"] != evaluations["first_other_horner"] or evaluations["second_other_monomial"] != evaluations["second_other_horner"]:
+        issues.append("component_other_evaluation_paths_disagree")
+    if evaluations["first_point_monomial"] != evaluations["first_other_monomial"]:
+        issues.append("first_component_collision_failed")
+    if evaluations["second_point_monomial"] != evaluations["second_other_monomial"]:
+        issues.append("second_component_collision_failed")
+    prime_field_collision = all(
+        all(int(entry) % prime == 0 for entry in value[1:]) for value in point_pair + other_pair
+    )
+    recorded_image = artifacts.get("image_at_point")
+    recorded_other_image = artifacts.get("image_at_other")
+    if recorded_image is None or recorded_other_image is None:
+        issues.append("missing_recorded_image")
+    else:
+        if [finite_field_element_text(evaluations["first_point_monomial"], prime), finite_field_element_text(evaluations["second_point_monomial"], prime)] != [str(item) for item in recorded_image]:
+            issues.append("recorded_image_at_point_mismatch")
+        if [finite_field_element_text(evaluations["first_other_monomial"], prime), finite_field_element_text(evaluations["second_other_monomial"], prime)] != [str(item) for item in recorded_other_image]:
+            issues.append("recorded_image_at_other_mismatch")
+    result_artifacts = {
+        "field_characteristic": prime,
+        "field_extension_degree": degree,
+        "field_order": field_order,
+        "field_modulus": [int(item) for item in modulus],
+        "field_modulus_is_canonical": modulus_matches,
+        "field_size_matches_element_table": len(elements) == field_order,
+        "sympy_determinant": str(determinant_sympy),
+        "constant_determinant_mod_characteristic": int(constant),
+        "determinant_nonzero": constant % prime != 0,
+        "nonconstant_coefficients_vanish_mod_characteristic": nonconstant_vanish,
+        "independent_determinant_check": independent_reduced == recorded_reduced,
+        "independent_determinant_polynomial": sp.sstr(
+            sum(
+                sp.Integer(coefficient) * x_symbol ** monomial[0] * y_symbol ** monomial[1]
+                for monomial, coefficient in independent_reduced.items()
+            )
+            or sp.Integer(0)
+        ),
+        "collision_differences_zero": "first_component_collision_failed" not in issues and "second_component_collision_failed" not in issues,
+        "independent_collision_check": all("evaluation_paths_disagree" not in issue for issue in issues),
+        "distinct_points": distinct,
+        "not_injective_on_finite_field": distinct and "first_component_collision_failed" not in issues and "second_component_collision_failed" not in issues,
+        "prime_field_collision": prime_field_collision,
+        "collision_lifts_to_algebraic_closure": prime_field_collision and all(getattr(coefficient, "is_Integer", False) for coefficient in tuple(first_coefficients.values()) + tuple(second_coefficients.values())),
+        "denominator_status": True,
+        "domain_exclusions_respected": True,
+        "no_numeric_certification": "floating_number_present" not in issues,
+        "refutation_scope": "polynomial maps over the finite field GF(" + str(prime) + ("" if degree == 1 else "^" + str(degree)) + ")",
+        "characteristic_zero_status": "open",
+        "image_at_point": [finite_field_element_text(evaluations["first_point_monomial"], prime), finite_field_element_text(evaluations["second_point_monomial"], prime)],
+        "image_at_other": [finite_field_element_text(evaluations["first_other_monomial"], prime), finite_field_element_text(evaluations["second_other_monomial"], prime)],
+        "formal_variables": specification.variables,
+    }
+    return VerificationResult(not issues, candidate, tuple(issues), result_artifacts)
 
 
 def _verify_planar(specification: ProblemSpec, candidate: Candidate) -> VerificationResult:

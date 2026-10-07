@@ -61,7 +61,8 @@ x = -1
 | --- | --- | --- |
 | algebraic identity counterassignment | any statement containing a parsable equality | an assignment of exact values to the variables |
 | finite group identity countermodel | group wording with a group word on both sides | an operation table, an identity element and an assignment |
-| planar constant determinant collision | refutation wording together with a Jacobian request and a two dimensional dimension marker | two polynomial components and two distinct exact points |
+| planar constant determinant collision | refutation wording together with a Jacobian request, a two dimensional dimension marker and an explicit characteristic zero request (`over the rationals`, `over q`, `characteristic zero`) | two polynomial components and two distinct exact points; the characteristic zero case is open, so this lane reports exhaustion |
+| finite field Jacobian refutation | refutation wording together with a Jacobian request and a two dimensional dimension marker, without a characteristic zero request | a finite field GF(p^k) of positive characteristic, two polynomial components, the constant nonzero determinant modulo p and two distinct points with a common image |
 
 ## Pipeline
 
@@ -75,8 +76,9 @@ x = -1
    and resource limits, then rebuilds candidates and checks their provenance.
 5. `verification` re-derives the certificate through independent paths:
    determinant by differentiation and by coefficient dictionaries, collisions by
-   direct evaluation and by coefficient evaluation, group words by two
-   evaluators, domain exclusions and denominator obligations.
+   direct evaluation and by coefficient evaluation, finite field collisions by
+   monomial and Horner evaluation over GF(p^k), group words by two evaluators,
+   domain exclusions and denominator obligations.
 6. `critique` rejects anything that was certified by a single path, that
    contains decimal text, or whose provenance does not match.
 7. `repair` maps every rejection reason onto a concrete frontier mutation.
@@ -134,13 +136,34 @@ Certificate payloads never contain floating point numbers: elapsed times are
 serialised as exact decimal strings and every algebraic value is canonical,
 exact text.
 
-### Example certificate
+### Example certificates
 
 `docs/example-refutation.json` and `docs/example-refutation.tex` are the
 verbatim exports of a live run of the statement
 `cáfold meg az x/(x-1) = 1 azonosságot`: the engine returned the exact
 counterassignment `x = 0`, whose left value is `0` and right value is `1`, with
 every audit row passing and the pole `x - 1` respected.
+
+`docs/example-jacobi-refutation.json` and `docs/example-jacobi-refutation.tex`
+are the verbatim exports of a live run of the statement
+`cáfold meg a 2D Jacobi-sejtést`. The engine formalizes this as
+`finite_field_jacobian_refutation`, walks the finite field ladder GF(2), GF(4),
+GF(8), ... and returns a certified refutation over GF(2):
+
+* the map is `F(x, y) = (x + y^2, x^2 + y)`,
+* its Jacobian determinant reduces to the nonzero constant `1` modulo the
+  characteristic, certified by a derivative-matrix path and by an independent
+  coefficient-dictionary path,
+* the distinct points `P = (0, 1)` and `Q = (1, 0)` both map to `(1, 1)`, so the
+  map is not injective over GF(2) and therefore is not a polynomial
+  automorphism.
+
+The certificate states its own scope: it refutes the Jacobian statement over the
+finite field GF(2) in positive characteristic. The general two dimensional
+Jacobi conjecture in characteristic zero is open and remains untouched by this
+witness; the characteristic zero lane (`refute the two dimensional Jacobian
+conjecture over the rationals`) still reports an honest exhaustion. Exhaustion
+never claims falsity.
 
 ### Browser client
 
@@ -150,10 +173,15 @@ KaTeX, streams the event log, draws the exact certificates (assignment tables,
 Cayley tables, Jacobian components with collision rows) and offers LaTeX, SymPy
 and JSON export.
 
-On load the interface immediately runs a refutation preset (Hungarian wording is
-understood as well, for example `cáfold meg az x/(x-1) = 1 azonosságot`), so the
-first thing the page shows is a found counterexample with its exact certificate,
-verification audit and exports. The result header states the outcome explicitly:
+On load the interface immediately runs the Jacobi refutation preset
+`cáfold meg a 2D Jacobi-sejtést`, so the first thing the page shows is a found
+counterexample - the certified finite field refutation above - with its exact
+certificate, verification audit and exports. Its result card displays the field,
+the irreducible modulus, the map, the constant determinant modulo the
+characteristic, both collision witnesses and a scope notice stating that the
+characteristic zero case stays open. Every other preset, including the plain
+algebraic ones (`cáfold meg az x/(x-1) = 1 azonosságot`), runs from the same
+composer. The result header states the outcome explicitly:
 `refutation found · cáfolat megvan` for a certificate, `no refutation within
 budget · nincs cáfolat` for an honest exhaustion report, and `no counterexample
 exists · nincs cáfolat` when the exact difference already vanishes. React, ReactDOM and KaTeX are vendored under

@@ -30,6 +30,7 @@ from .latex import (
 )
 
 _KIND_LABELS = {
+    ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION: "finite field Jacobian refutation",
     ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION: "planar constant determinant collision",
     ProblemKind.ALGEBRAIC_IDENTITY_COUNTERASSIGNMENT: "algebraic identity counterassignment",
     ProblemKind.FINITE_GROUP_IDENTITY_COUNTERMODEL: "finite group identity countermodel",
@@ -204,6 +205,23 @@ def formalization_payload(
             "search_limit": effective,
             "mutation_orders": mutation_orders,
         }
+    if specification.finite_field_target is not None:
+        target = specification.finite_field_target
+        ladder = [
+            {"prime": int(prime), "degree": int(degree), "field": "GF(" + str(prime) + "^" + str(degree) + ")", "elements": int(prime) ** int(degree)}
+            for prime in target.characteristic_candidates
+            for degree in target.extension_degree_candidates
+        ]
+        payload.update(
+            {
+                "finite_field_ladder": ladder,
+                "map_families": list(target.map_families),
+                "characteristic_zero_status": target.characteristic_zero_domain,
+                "determinant_requirement": r"\det J \equiv c \neq 0 \;(\mathrm{mod}\; p)",
+                "determinant_latex": r"\det J(F_1, F_2) = \frac{\partial F_1}{\partial x}\frac{\partial F_2}{\partial y} - \frac{\partial F_1}{\partial y}\frac{\partial F_2}{\partial x} \equiv c \neq 0",
+                "field_note": "a keresés véges testek fölött cáfolja a 2D Jacobi-sejtést; a characteristic 0 eset nyitott marad",
+            }
+        )
     if specification.planar_target is not None:
         target = specification.planar_target
         payload.update(
@@ -444,6 +462,143 @@ def _group_block(specification: ProblemSpec, candidate: Candidate, verification:
     }
 
 
+def _finite_field_modulus_latex(modulus: Sequence[int], prime: int) -> str:
+    if not modulus:
+        return "\\text{prime field}"
+    degree = len(modulus)
+    terms: list[str] = []
+    for power in range(degree, -1, -1):
+        coefficient = 1 if power == degree else int(modulus[power])
+        coefficient = coefficient % int(prime)
+        if coefficient == 0:
+            continue
+        if power == 0:
+            terms.append(str(coefficient))
+        elif power == 1:
+            terms.append("a" if coefficient == 1 else str(coefficient) + " a")
+        else:
+            terms.append("a^{" + str(power) + "}" if coefficient == 1 else str(coefficient) + " a^{" + str(power) + "}")
+    return " + ".join(terms) if terms else "0"
+
+
+def _finite_field_block(specification: ProblemSpec, candidate: Candidate, verification: VerificationResult) -> dict[str, Any]:
+    artifacts = dict(verification.artifacts)
+    prime = int(artifacts.get("field_characteristic", 2))
+    degree = int(artifacts.get("field_extension_degree", 1))
+    field_order = int(artifacts.get("field_order", prime ** degree))
+    field_label = "GF(" + str(prime) + ("" if degree == 1 else "^" + str(degree)) + ")"
+    modulus = tuple(int(item) for item in artifacts.get("field_modulus", ()))
+    formulas = {str(name): exact_text(value) for name, value in candidate.formulas.items()}
+    labels = {"F1": "F₁", "F₁": "F₁", "first": "F₁", "F2": "F₂", "F₂": "F₂", "second": "F₂"}
+    component_rows: list[dict[str, Any]] = []
+    for key, value in formulas.items():
+        component_rows.append(
+            {
+                "key": key,
+                "label": labels.get(key, key),
+                "expression": value,
+                "latex": expression_latex(value, ("x", "y")),
+            }
+        )
+    points = {str(name): [exact_text(item) for item in values] for name, values in candidate.points.items()}
+    point_rows: list[dict[str, Any]] = []
+    for key in ("P", "Q"):
+        if key not in points:
+            continue
+        values = points[key]
+        point_rows.append(
+            {
+                "key": key,
+                "coordinates": values,
+                "latex": "\\left(" + ", ".join(str(item) for item in values) + "\\right)",
+                "coordinates_latex": [expression_latex(str(item)) for item in values],
+            }
+        )
+    image_at_point = [str(item) for item in artifacts.get("image_at_point", ())]
+    image_at_other = [str(item) for item in artifacts.get("image_at_other", ())]
+    collision_rows: list[dict[str, Any]] = []
+    for index, row in enumerate(component_rows):
+        at_point = image_at_point[index] if index < len(image_at_point) else ""
+        at_other = image_at_other[index] if index < len(image_at_other) else ""
+        difference = ""
+        if at_point and at_other:
+            difference = "0" if at_point == at_other else at_point + " - (" + at_other + ")"
+        collision_rows.append(
+            {
+                "label": row["label"],
+                "at_point": at_point,
+                "at_other": at_other,
+                "difference": difference,
+                "equal": at_point == at_other and at_point != "",
+            }
+        )
+    determinant_constant = int(artifacts.get("constant_determinant_mod_characteristic", 0))
+    return {
+        "field_label": field_label,
+        "field_characteristic": prime,
+        "field_extension_degree": degree,
+        "field_order": field_order,
+        "field_modulus": [int(item) for item in modulus],
+        "field_modulus_text": _finite_field_modulus_text(modulus, prime),
+        "field_modulus_latex": _finite_field_modulus_latex(modulus, prime),
+        "components": {row["label"]: row["latex"] for row in component_rows},
+        "component_rows": component_rows,
+        "point_p": points.get("P", []),
+        "point_q": points.get("Q", []),
+        "point_p_latex": next((row["latex"] for row in point_rows if row["key"] == "P"), ""),
+        "point_q_latex": next((row["latex"] for row in point_rows if row["key"] == "Q"), ""),
+        "points": point_rows,
+        "image_at_point": image_at_point,
+        "image_at_other": image_at_other,
+        "image_latex": "\\left(" + ", ".join(image_at_point) + "\\right)",
+        "collision_rows": collision_rows,
+        "collision_differences_zero": bool(artifacts.get("collision_differences_zero", False)),
+        "jacobian_determinant": exact_text(artifacts.get("sympy_determinant", "0")),
+        "jacobian_determinant_latex": expression_latex(str(artifacts.get("sympy_determinant", "0")), ("x", "y")),
+        "independent_determinant": exact_text(artifacts.get("independent_determinant_polynomial", "0")),
+        "independent_determinant_latex": expression_latex(str(artifacts.get("independent_determinant_polynomial", "0")), ("x", "y")),
+        "determinant_constant_mod_characteristic": determinant_constant,
+        "determinant_constant_latex": r"\det J \equiv " + str(determinant_constant) + r" \;(\mathrm{mod}\; " + str(prime) + ")",
+        "determinant_nonzero": bool(artifacts.get("determinant_nonzero", False)),
+        "nonconstant_coefficients_vanish_mod_characteristic": bool(artifacts.get("nonconstant_coefficients_vanish_mod_characteristic", False)),
+        "independent_determinant_check": bool(artifacts.get("independent_determinant_check", False)),
+        "independent_collision_check": bool(artifacts.get("independent_collision_check", False)),
+        "distinct_points": bool(artifacts.get("distinct_points", False)),
+        "not_injective_on_finite_field": bool(artifacts.get("not_injective_on_finite_field", False)),
+        "prime_field_collision": bool(artifacts.get("prime_field_collision", False)),
+        "collision_lifts_to_algebraic_closure": bool(artifacts.get("collision_lifts_to_algebraic_closure", False)),
+        "refutation_scope": str(artifacts.get("refutation_scope", field_label)),
+        "characteristic_zero_status": str(artifacts.get("characteristic_zero_status", "open")),
+        "field_modulus_is_canonical": bool(artifacts.get("field_modulus_is_canonical", False)),
+        "runtime_route": str(candidate.exact_derivation_artifacts.get("runtime_route", "")),
+        "runtime_determinant": exact_text(candidate.exact_derivation_artifacts.get("runtime_determinant", "")),
+        "map_family": str(candidate.exact_derivation_artifacts.get("map_family", "")),
+        "frontier_signature": str(candidate.exact_derivation_artifacts.get("frontier_signature", candidate.frontier_signature)),
+        "map_latex": "\\begin{aligned} "
+        + " \\\\ ".join(row["label"] + r"(x,y) &= " + row["latex"] for row in component_rows)
+        + " \\end{aligned}",
+        "note": "az általános 2D Jacobi-sejtés characteristic 0 fölött nyitott marad",
+    }
+
+
+def _finite_field_modulus_text(modulus: Sequence[int], prime: int) -> str:
+    if not modulus:
+        return "none: GF(" + str(prime) + ") is the prime field"
+    degree = len(modulus)
+    terms: list[str] = []
+    for power in range(degree, -1, -1):
+        coefficient = (1 if power == degree else int(modulus[power])) % int(prime)
+        if coefficient == 0:
+            continue
+        if power == 0:
+            terms.append(str(coefficient))
+        elif power == 1:
+            terms.append("a" if coefficient == 1 else str(coefficient) + "*a")
+        else:
+            terms.append("a^" + str(power) if coefficient == 1 else str(coefficient) + "*a^" + str(power))
+    return " + ".join(terms) if terms else "0"
+
+
 def _planar_block(specification: ProblemSpec, candidate: Candidate, verification: VerificationResult) -> dict[str, Any]:
     artifacts = dict(verification.artifacts)
     formulas = {str(name): exact_text(value) for name, value in candidate.formulas.items()}
@@ -674,6 +829,78 @@ def audit_payload(
                 str(artifacts.get("group_order", "")) if artifacts.get("group_order") is not None else "",
             )
         )
+    if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        entries.append(
+            _audit_entry(
+                "field_modulus",
+                "Canonical irreducible field modulus",
+                artifacts.get("field_modulus_is_canonical") is True and artifacts.get("field_size_matches_element_table") is True,
+                "the declared field is GF(p^k) with the canonical irreducible modulus and a complete element table"
+                if artifacts.get("field_modulus_is_canonical") is True and artifacts.get("field_size_matches_element_table") is True
+                else "the field modulus or the element table does not match the declared extension",
+                str(artifacts.get("field_order", "")),
+            )
+        )
+        entries.append(
+            _audit_entry(
+                "determinant_mod_characteristic",
+                "Constant nonzero determinant modulo the characteristic",
+                artifacts.get("determinant_nonzero") is True and artifacts.get("nonconstant_coefficients_vanish_mod_characteristic") is True,
+                "every nonconstant coefficient vanished modulo p and the constant is nonzero modulo p"
+                if artifacts.get("determinant_nonzero") is True and artifacts.get("nonconstant_coefficients_vanish_mod_characteristic") is True
+                else "the determinant obligation is incomplete modulo the characteristic",
+                "det J = " + str(artifacts.get("constant_determinant_mod_characteristic", "")) + " (mod " + str(artifacts.get("field_characteristic", "")) + ")",
+            )
+        )
+        entries.append(
+            _audit_entry(
+                "dual_determinant",
+                "Determinant by two independent paths",
+                artifacts.get("independent_determinant_check") is True,
+                "derivative-matrix and coefficient-dictionary determinants reduce to the same polynomial over the field"
+                if artifacts.get("independent_determinant_check") is True
+                else "the determinant paths disagreed",
+            )
+        )
+        entries.append(
+            _audit_entry(
+                "dual_collision",
+                "Collision by two independent field arithmetic paths",
+                artifacts.get("independent_collision_check") is True,
+                "monomial and Horner evaluation over GF(p^k) agree at both witnesses"
+                if artifacts.get("independent_collision_check") is True
+                else "the field evaluation paths disagreed",
+            )
+        )
+        entries.append(
+            _audit_entry(
+                "distinct_points",
+                "The two points are provably distinct",
+                artifacts.get("distinct_points") is True,
+                "a coordinate difference is a nonzero element of GF(p^k)"
+                if artifacts.get("distinct_points") is True
+                else "point distinctness was not proved",
+            )
+        )
+        entries.append(
+            _audit_entry(
+                "collision_obligation",
+                "Collision equations discharged",
+                artifacts.get("collision_differences_zero") is True and artifacts.get("not_injective_on_finite_field") is True,
+                "both components agree at the two distinct points, so the map is not injective over the field"
+                if artifacts.get("collision_differences_zero") is True and artifacts.get("not_injective_on_finite_field") is True
+                else "the collision obligation is incomplete",
+            )
+        )
+        entries.append(
+            _audit_entry(
+                "refutation_scope",
+                "Refutation scope declared",
+                bool(artifacts.get("refutation_scope")) and artifacts.get("characteristic_zero_status") == "open",
+                "the certificate states that the refutation is over the finite field and that characteristic 0 remains open",
+                str(artifacts.get("refutation_scope", "")),
+            )
+        )
     if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
         entries.append(
             _audit_entry(
@@ -800,7 +1027,27 @@ def certificate_payload(
     block: dict[str, Any]
     headline = ""
     headline_latex = ""
-    if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
+    if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        block = _finite_field_block(specification, candidate, verification)
+        headline = (
+            "over "
+            + str(block["field_label"])
+            + ": P = ("
+            + ", ".join(block["point_p"])
+            + ") differs from Q = ("
+            + ", ".join(block["point_q"])
+            + ") while F(P) = F(Q) = ("
+            + ", ".join(block["image_at_point"])
+            + ")"
+        )
+        headline_latex = (
+            block["point_p_latex"]
+            + r" \neq "
+            + block["point_q_latex"]
+            + r",\quad F(P) = F(Q) = "
+            + block["image_latex"]
+        )
+    elif specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
         block = _planar_block(specification, candidate, verification)
         headline = "P = (" + ", ".join(block["point_p"]) + ") differs from Q = (" + ", ".join(block["point_q"]) + ")"
         headline_latex = block["point_p_latex"] + r" \neq " + block["point_q_latex"]
@@ -841,6 +1088,7 @@ def certificate_payload(
         "algebraic": block if specification.kind == ProblemKind.ALGEBRAIC_IDENTITY_COUNTERASSIGNMENT else None,
         "group": block if specification.kind == ProblemKind.FINITE_GROUP_IDENTITY_COUNTERMODEL else None,
         "planar": block if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION else None,
+        "finite_field": block if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION else None,
         "exhaustion": None,
         "proof": None,
         "provenance": {

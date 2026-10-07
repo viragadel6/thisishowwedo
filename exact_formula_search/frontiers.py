@@ -180,6 +180,49 @@ def _initial_planar_frontiers() -> tuple[Frontier, ...]:
     return tuple(items)
 
 
+def _finite_field_ladder(characteristics: tuple[int, ...], degrees: tuple[int, ...]) -> tuple[tuple[int, int], ...]:
+    pairs: list[tuple[int, int]] = []
+    for prime in characteristics:
+        for degree in degrees:
+            pairs.append((int(prime), int(degree)))
+    return tuple(sorted(set(pairs), key=lambda item: (item[0] ** item[1], item[0], item[1])))
+
+
+def _initial_finite_field_jacobi_frontiers(specification: ProblemSpec) -> tuple[Frontier, ...]:
+    target = specification.finite_field_target
+    characteristics = target.characteristic_candidates if target is not None else (2, 3, 5, 7)
+    degrees = target.extension_degree_candidates if target is not None else (1, 2, 3)
+    families = target.map_families if target is not None else ("frobenius_pair",)
+    items: list[Frontier] = []
+    for index, (prime, degree) in enumerate(_finite_field_ladder(tuple(characteristics), tuple(degrees))):
+        items.append(
+            make_frontier(
+                FrontierKind.FINITE_FIELD_JACOBIAN_LATTICE,
+                2,
+                1,
+                _paired_support(sparse_support(2)),
+                SymmetryMode.NONE,
+                CompositionScheme.DIRECT,
+                EliminationObjective.DETERMINANT_FIRST,
+                PointPattern.FINITE_FIELD,
+                ExactDomain.FINITE_FIELD_EXTENSION,
+                "lane_gf_" + str(prime) + "_" + str(degree),
+                (),
+                {
+                    "prime": int(prime),
+                    "extension_degree": int(degree),
+                    "map_families": list(families),
+                    "family_index": 0,
+                    "coefficient_offset": 0,
+                    "lane_index": index,
+                    "max_maps": 64,
+                    "max_points": 65536,
+                },
+            )
+        )
+    return tuple(items)
+
+
 def _initial_algebraic_frontiers(specification: ProblemSpec) -> tuple[Frontier, ...]:
     extent = 2
     if specification.algebraic_identity is not None:
@@ -224,6 +267,8 @@ def _initial_group_frontiers(specification: ProblemSpec) -> tuple[Frontier, ...]
 
 
 def initial_frontiers(specification: ProblemSpec) -> tuple[Frontier, ...]:
+    if specification.kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        return _initial_finite_field_jacobi_frontiers(specification)
     if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
         return _initial_planar_frontiers()
     if specification.kind == ProblemKind.FINITE_GROUP_IDENTITY_COUNTERMODEL:
@@ -236,6 +281,8 @@ def _allowed_domains(kind: ProblemKind | None) -> tuple[ExactDomain, ...]:
         return (ExactDomain.FINITE_TABLE,)
     if kind == ProblemKind.ALGEBRAIC_IDENTITY_COUNTERASSIGNMENT:
         return (ExactDomain.RATIONAL, ExactDomain.ALGEBRAIC)
+    if kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+        return (ExactDomain.FINITE_FIELD_EXTENSION,)
     return (ExactDomain.RATIONAL, ExactDomain.ALGEBRAIC, ExactDomain.MODULAR_PRESCREEN)
 
 
@@ -300,6 +347,13 @@ def mutate_frontier(
             composition = CompositionScheme.DIRECT
             pattern = PointPattern.RATIONAL_GRID
             elimination = elimination_cycle[(elimination_cycle.index(seed_elimination) + index) % len(elimination_cycle)]
+        if kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+            kind_next = FrontierKind.FINITE_FIELD_JACOBIAN_LATTICE
+            symmetry = SymmetryMode.NONE
+            composition = CompositionScheme.DIRECT
+            pattern = PointPattern.FINITE_FIELD
+            domain = ExactDomain.FINITE_FIELD_EXTENSION
+            elimination = EliminationObjective.DETERMINANT_FIRST
         domain_index = (allowed_domains.index(seed_domain) + index) % len(allowed_domains) if seed_domain in allowed_domains else 0
         domain = allowed_domains[domain_index]
         if action == "strengthen_exact_domain_conversion" and ExactDomain.RATIONAL in allowed_domains:
@@ -320,6 +374,16 @@ def mutate_frontier(
             extra["independent_check_level"] = 3 + index % 3
         if domain == ExactDomain.MODULAR_PRESCREEN:
             extra["prime"] = (2, 3, 5, 7)[index % 4]
+        if kind == ProblemKind.FINITE_FIELD_JACOBIAN_REFUTATION:
+            extra["prime"] = (2, 3, 5, 7, 11, 13)[index % 6]
+            extra["extension_degree"] = 1 + index % 4
+            extra["map_families"] = ["frobenius_pair", "frobenius_shear", "frobenius_y_shear", "frobenius_mixed_shear"]
+            extra["family_index"] = index // 24
+            extra["coefficient_offset"] = index % 24
+            extra["lane_index"] = index
+            extra["max_maps"] = 64 * (1 + index // 120)
+            extra["max_points"] = 65536
+            extra["expansion_round"] = index // 24
         if kind == ProblemKind.FINITE_GROUP_IDENTITY_COUNTERMODEL:
             extra["max_order"] = max(1, degree)
             extra["group_order"] = max(1, degree)

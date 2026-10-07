@@ -1053,3 +1053,309 @@ def _stable_data(value: Any) -> Any:
 def stable_signature(value: Any) -> str:
     payload = json.dumps(_stable_data(value), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def is_prime_number(value: Any) -> bool:
+    number = int(value)
+    if number < 2:
+        return False
+    if number < 4:
+        return True
+    if number % 2 == 0:
+        return False
+    divisor = 3
+    while divisor * divisor <= number:
+        if number % divisor == 0:
+            return False
+        divisor += 2
+    return True
+
+
+def prime_divisors(value: int) -> tuple[int, ...]:
+    number = max(1, int(value))
+    divisors: list[int] = []
+    candidate = 2
+    while candidate * candidate <= number:
+        if number % candidate == 0:
+            divisors.append(candidate)
+            while number % candidate == 0:
+                number //= candidate
+        candidate += 1
+    if number > 1:
+        divisors.append(number)
+    return tuple(divisors)
+
+
+def _poly_trim(coefficients: Sequence[int], prime: int) -> tuple[int, ...]:
+    values = [int(entry) % prime for entry in coefficients]
+    while values and values[-1] == 0:
+        values.pop()
+    return tuple(values)
+
+
+def _poly_add(left: Sequence[int], right: Sequence[int], prime: int) -> tuple[int, ...]:
+    size = max(len(left), len(right))
+    result = [0] * size
+    for index in range(size):
+        a = left[index] if index < len(left) else 0
+        b = right[index] if index < len(right) else 0
+        result[index] = (a + b) % prime
+    return _poly_trim(result, prime)
+
+
+def _poly_subtract(left: Sequence[int], right: Sequence[int], prime: int) -> tuple[int, ...]:
+    size = max(len(left), len(right))
+    result = [0] * size
+    for index in range(size):
+        a = left[index] if index < len(left) else 0
+        b = right[index] if index < len(right) else 0
+        result[index] = (a - b) % prime
+    return _poly_trim(result, prime)
+
+
+def _poly_multiply(left: Sequence[int], right: Sequence[int], prime: int) -> tuple[int, ...]:
+    if not left or not right:
+        return ()
+    result = [0] * (len(left) + len(right) - 1)
+    for i, a in enumerate(left):
+        if a == 0:
+            continue
+        for j, b in enumerate(right):
+            if b == 0:
+                continue
+            result[i + j] = (result[i + j] + a * b) % prime
+    return _poly_trim(result, prime)
+
+
+def _poly_divmod(numerator: Sequence[int], denominator: Sequence[int], prime: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    top = _poly_trim(numerator, prime)
+    bottom = _poly_trim(denominator, prime)
+    if not bottom:
+        raise ValueError("division_by_zero_polynomial")
+    inverse_lead = pow(bottom[-1], prime - 2, prime)
+    quotient = [0] * max(0, len(top) - len(bottom) + 1)
+    remainder = list(top)
+    while len(remainder) >= len(bottom) and remainder:
+        shift = len(remainder) - len(bottom)
+        factor = (remainder[-1] * inverse_lead) % prime
+        quotient[shift] = factor
+        for index in range(len(bottom)):
+            remainder[shift + index] = (remainder[shift + index] - factor * bottom[index]) % prime
+        remainder = list(_poly_trim(remainder, prime))
+    return _poly_trim(quotient, prime), _poly_trim(remainder, prime)
+
+
+def _poly_monic(coefficients: Sequence[int], prime: int) -> tuple[int, ...]:
+    values = _poly_trim(coefficients, prime)
+    if not values:
+        return ()
+    inverse_lead = pow(values[-1], prime - 2, prime)
+    return tuple((entry * inverse_lead) % prime for entry in values)
+
+
+def _poly_gcd(left: Sequence[int], right: Sequence[int], prime: int) -> tuple[int, ...]:
+    a = _poly_trim(left, prime)
+    b = _poly_trim(right, prime)
+    while b:
+        _, remainder = _poly_divmod(a, b, prime)
+        a, b = b, remainder
+    return _poly_monic(a, prime)
+
+
+def _poly_powmod(base: Sequence[int], exponent: int, modulus: Sequence[int], prime: int) -> tuple[int, ...]:
+    reduced = _poly_divmod(base, modulus, prime)[1]
+    result: tuple[int, ...] = (1 % prime,)
+    power = reduced
+    value = max(0, int(exponent))
+    while value:
+        if value & 1:
+            result = _poly_divmod(_poly_multiply(result, power, prime), modulus, prime)[1]
+        power = _poly_divmod(_poly_multiply(power, power, prime), modulus, prime)[1]
+        value >>= 1
+    return result
+
+
+def irreducible_modulus_polynomial(prime: Any, degree: Any) -> tuple[int, ...]:
+    p = int(prime)
+    k = int(degree)
+    if not is_prime_number(p):
+        raise ValueError("characteristic_not_prime")
+    if k < 1:
+        raise ValueError("invalid_extension_degree")
+    x_polynomial = (0, 1)
+    if k == 1:
+        return ()
+    factors = prime_divisors(k)
+    for candidate in range(p ** k):
+        lower = [((candidate // (p ** index)) % p) for index in range(k)]
+        monic = tuple(lower + [1])
+        frobenius = _poly_powmod(x_polynomial, p ** k, monic, p)
+        if _poly_subtract(frobenius, x_polynomial, p) != ():
+            continue
+        coprime = True
+        for divisor in factors:
+            difference = _poly_subtract(_poly_powmod(x_polynomial, p ** (k // divisor), monic, p), x_polynomial, p)
+            if _poly_gcd(monic, difference, p) != (1 % p,):
+                coprime = False
+                break
+        if coprime:
+            return tuple(lower)
+    raise ValueError("irreducible_polynomial_not_found")
+
+
+def finite_field_elements(prime: Any, degree: Any) -> tuple[tuple[int, ...], ...]:
+    p = int(prime)
+    k = int(degree)
+    if not is_prime_number(p) or k < 1:
+        raise ValueError("invalid_finite_field")
+    elements: list[tuple[int, ...]] = []
+    for index in range(p ** k):
+        vector = tuple((index // (p ** position)) % p for position in range(k))
+        elements.append(vector)
+    return tuple(elements)
+
+
+def finite_field_reduce(vector: Sequence[int], prime: Any, modulus: Sequence[int]) -> tuple[int, ...]:
+    p = int(prime)
+    degree = len(modulus)
+    if degree == 0:
+        return ((int(vector[0]) % p,) if vector else (0,))
+    values = [int(entry) % p for entry in vector]
+    while len(values) > degree:
+        top = values.pop()
+        if top == 0:
+            continue
+        shift = len(values) - degree
+        for index in range(degree):
+            values[shift + index] = (values[shift + index] - top * modulus[index]) % p
+    while len(values) < degree:
+        values.append(0)
+    return tuple(entry % p for entry in values)
+
+
+def finite_field_size(prime: Any, degree: Any) -> int:
+    p = int(prime)
+    k = int(degree)
+    if not is_prime_number(p) or k < 1:
+        raise ValueError("invalid_finite_field")
+    return p ** k
+
+
+def finite_field_add(left: Sequence[int], right: Sequence[int], prime: Any) -> tuple[int, ...]:
+    p = int(prime)
+    size = max(len(left), len(right), 1)
+    return tuple(((left[index] if index < len(left) else 0) + (right[index] if index < len(right) else 0)) % p for index in range(size))
+
+
+def finite_field_negate(value: Sequence[int], prime: Any) -> tuple[int, ...]:
+    p = int(prime)
+    return tuple((-int(entry)) % p for entry in value)
+
+
+def finite_field_multiply(left: Sequence[int], right: Sequence[int], prime: Any, modulus: Sequence[int]) -> tuple[int, ...]:
+    p = int(prime)
+    if not left or not right:
+        return finite_field_reduce((0,), p, modulus)
+    if not modulus:
+        return (((int(left[0]) if left else 0) * (int(right[0]) if right else 0)) % p,)
+    product: list[int] = [0] * (len(left) + len(right) - 1)
+    for i, a in enumerate(left):
+        for j, b in enumerate(right):
+            product[i + j] = (product[i + j] + int(a) * int(b)) % p
+    return finite_field_reduce(product, p, modulus)
+
+
+def finite_field_power(value: Sequence[int], exponent: int, prime: Any, modulus: Sequence[int]) -> tuple[int, ...]:
+    p = int(prime)
+    count = max(0, int(exponent))
+    if not modulus:
+        scalar = int(value[0]) % p if value else 0
+        return (pow(scalar, count, p),)
+    base = finite_field_reduce(tuple(int(entry) % p for entry in value), p, modulus)
+    result = finite_field_reduce((1,), p, modulus)
+    power = base
+    while count:
+        if count & 1:
+            result = finite_field_multiply(result, power, p, modulus)
+        power = finite_field_multiply(power, power, p, modulus)
+        count >>= 1
+    return result
+
+
+def finite_field_inverse(value: Sequence[int], prime: Any, modulus: Sequence[int]) -> tuple[int, ...]:
+    p = int(prime)
+    degree = max(1, len(modulus))
+    order = p ** degree
+    if not any(int(entry) % p for entry in value):
+        raise ValueError("zero_element_has_no_inverse")
+    return finite_field_power(value, order - 2, p, modulus)
+
+
+def finite_field_from_int(value: Any, prime: Any, degree: Any) -> tuple[int, ...]:
+    p = int(prime)
+    k = int(degree)
+    first = int(value) % p
+    return tuple([first] + [0] * (k - 1))
+
+
+def finite_field_is_zero(value: Sequence[int], prime: Any) -> bool:
+    p = int(prime)
+    return all(int(entry) % p == 0 for entry in value)
+
+
+def finite_field_element_text(value: Sequence[int], prime: Any, generator: str = "a") -> str:
+    p = int(prime)
+    terms: list[str] = []
+    for degree in range(len(value) - 1, -1, -1):
+        coefficient = int(value[degree]) % p
+        if coefficient == 0:
+            continue
+        if degree == 0:
+            terms.append(str(coefficient))
+        elif degree == 1:
+            terms.append(generator if coefficient == 1 else str(coefficient) + "*" + generator)
+        else:
+            power = generator + "^" + str(degree)
+            terms.append(power if coefficient == 1 else str(coefficient) + "*" + power)
+    return " + ".join(terms) if terms else "0"
+
+
+def finite_field_element_from_text(text: Any, prime: Any, degree: Any, generator: str = "a") -> tuple[int, ...]:
+    p = int(prime)
+    k = int(degree)
+    raw = str(text).replace(" ", "").replace("**", "^").replace("*", "*")
+    if not raw:
+        raise ValueError("empty_field_element")
+    if raw in ("0", "-0"):
+        return tuple([0] * k)
+    values = [0] * k
+    for term in raw.replace("-", "+-").split("+"):
+        if not term or term == "-":
+            continue
+        sign = 1
+        body = term
+        if body.startswith("-"):
+            sign = -1
+            body = body[1:]
+        if not body:
+            continue
+        if generator not in body:
+            values[0] = (values[0] + sign * int(body)) % p
+            continue
+        coefficient_text, _, power_text = body.partition(generator)
+        coefficient_text = coefficient_text.rstrip("*")
+        coefficient = int(coefficient_text) if coefficient_text else 1
+        if power_text.startswith("^"):
+            exponent = int(power_text[1:])
+        elif power_text == "":
+            exponent = 1
+        else:
+            raise ValueError("invalid_field_element:" + str(text))
+        if exponent >= k:
+            raise ValueError("field_element_degree_exceeds_extension")
+        values[exponent] = (values[exponent] + sign * coefficient) % p
+    return tuple(entry % p for entry in values)
+
+
+def finite_field_vector_from_text(text: Any, prime: Any, degree: Any, generator: str = "a") -> tuple[int, ...]:
+    return finite_field_element_from_text(text, prime, degree, generator)

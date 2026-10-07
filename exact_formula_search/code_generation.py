@@ -83,6 +83,7 @@ def _problem_payload(specification: ProblemSpec, limits: SearchBudget | None = N
         "planar_target": _plain(specification.planar_target) if specification.planar_target is not None else None,
         "algebraic_identity": _plain(specification.algebraic_identity) if specification.algebraic_identity is not None else None,
         "finite_group_identity": _plain(specification.finite_group_identity) if specification.finite_group_identity is not None else None,
+        "finite_field_target": _plain(specification.finite_field_target) if specification.finite_field_target is not None else None,
     }
 
 

@@ -1,4 +1,3 @@
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 (function () {
   const LensSignal = class {
     constructor(initial) {
@@ -507,13 +506,14 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
       const detaches = sources.map(v => v.on("change", compose));
       return () => detaches.forEach(off => off());
     }, [x, scaleX, scaleY]);
-    return React.createElement("div", _extends({
+    return React.createElement("div", {
       ref: node => {
         nodeRef.current = node;
         if (typeof forwardedRef === "function") forwardedRef(node);else if (forwardedRef) forwardedRef.current = node;
       },
-      style: style
-    }, rest), children);
+      style: style,
+      ...rest
+    }, children);
   });
   const VERT = `#version 300 es
 in vec2 a_pos;
@@ -1489,7 +1489,7 @@ void main() {
         opacity: Math.min(1, Math.abs(merged.brightness))
       }
     }) : null;
-    return React.createElement("div", _extends({
+    return React.createElement("div", {
       ref: node => {
         wrapRef.current = node;
         if (typeof forwardedRef === "function") forwardedRef(node);else if (forwardedRef) forwardedRef.current = node;
@@ -1506,8 +1506,9 @@ void main() {
         height: explicitH
       } : null, box.appliedR != null ? {
         borderRadius: box.appliedR
-      } : null)
-    }, rest), brightnessLayer, children, React.createElement("div", {
+      } : null),
+      ...rest
+    }, brightnessLayer, children, React.createElement("div", {
       "aria-hidden": true,
       "data-lg-layer": "",
       style: {
@@ -2264,7 +2265,7 @@ void main() {
         boxShadow: [shadow, insetShadow ? `inset ${insetShadow}` : null].filter(Boolean).join(", ")
       }
     }) : null;
-    return React.createElement("div", _extends({
+    return React.createElement("div", {
       ref: containerRef,
       "data-liquid-glass": "",
       className: className,
@@ -2276,8 +2277,9 @@ void main() {
         width: "fit-content"
       } : null, superSource ? {
         minHeight: size.h
-      } : null, style)
-    }, rest), superSource ? superWrap(sourceRef, children, {
+      } : null, style),
+      ...rest
+    }, superSource ? superWrap(sourceRef, children, {
       willChange: "filter"
     }) : overlay == null && refractionTarget == null ? React.createElement("div", {
       ref: sourceRef,
@@ -2478,14 +2480,16 @@ void main() {
     const animatedGeometry = isGlassMotionValue(width) || isGlassMotionValue(height) || isGlassMotionValue(radius) || isGlassMotionValue(sw) || isGlassMotionValue(sh) || isGlassMotionValue(cx) || isGlassMotionValue(cy);
     const isMaterial = children != null && refract == null && src == null && draw == null && lenses == null && overlay == null && !pixelUnits && tintColor == null && tintOpacity == null && tintBlur == null && shadowOpacity == null && restShadowOpacity == null && edgeBias == null && !brightnessInFilter && filterResolution == null && !live && depth == null && scale == null && onLensMapChange == null && cx == null && cy == null && !animatedGeometry;
     if (isMaterial) {
-      return React.createElement(GlassMaterial, _extends({}, htmlRest, {
+      return React.createElement(GlassMaterial, {
+        ...htmlRest,
         optics: optics,
         radius: radius,
         width: width == null ? sw : width,
         height: height == null ? sh : height
-      }), children);
+      }, children);
     }
-    return React.createElement(GlassDOM, _extends({}, rest, {
+    return React.createElement(GlassDOM, {
+      ...rest,
       lensW: lensW,
       lensH: lensH,
       borderRadius: radius,
@@ -2494,7 +2498,7 @@ void main() {
       lens: optics,
       refractionTarget: refract,
       refractionBackground: behind
-    }), children);
+    }, children);
   };
   const GlassSwitch = ({
     value,
