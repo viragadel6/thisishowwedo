@@ -4,8 +4,8 @@ import math
 import operator
 import time
 from collections import deque
-from collections.abc import Iterable
-from typing import Any
+from collections.abc import Callable, Iterable
+from typing import Any, TypeVar
 
 from .code_generation import generate_search_code
 from .critique import critique_candidate
@@ -18,351 +18,596 @@ from .repair import build_repair_request, repair_frontiers
 from .symbolic_tools import exact_parse_expression, exact_zero
 from .verification import verify_candidate
 
-FRONTIER_BATCH_SIZE = 5
-MAX_DIAGNOSTIC_TEXT_LENGTH = 500
-MINIMUM_SEARCH_SECONDS = 0.001
+_FRONTIER_BATCH_SIZE = 5
+_EXCEPTION_TEXT_LIMIT = 500
+_Result = TypeVar("_Result")
 
 
-def _bounded_text(text: Any) -> str:
-    if text is None:
-        return ""
-    return str(text)[:MAX_DIAGNOSTIC_TEXT_LENGTH]
+class _SearchBudgetExhausted(Exception):
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
 
 
-def _exception_text(exception: BaseException) -> str:
+def _nonnegative_integer(value: Any, name: str) -> int:
+    if isinstance(value, bool):
+        raise TypeError(name + " must be a nonnegative integer")
     try:
-        return _bounded_text(repr(exception))
+        result = operator.index(value)
+    except TypeError as exception:
+        raise TypeError(
+            name + " must be a nonnegative integer"
+        ) from exception
+    if result < 0:
+        raise ValueError(name + " must be a nonnegative integer")
+    return result
+
+
+def _nonnegative_seconds(value: Any) -> float:
+    message = "max_seconds must be a finite, nonnegative real number"
+    if isinstance(value, (bool, str, bytes, bytearray)):
+        raise TypeError(message)
+    try:
+        result = float(value)
+    except TypeError as exception:
+        raise TypeError(message) from exception
+    except (ValueError, OverflowError) as exception:
+        raise ValueError(message) from exception
+    if not math.isfinite(result) or result < 0:
+        raise ValueError(message)
+    return result
+
+
+def _check_deadline(deadline: float | None) -> None:
+    if deadline is not None and time.monotonic() >= deadline:
+        raise _SearchBudgetExhausted("search_budget_exhausted")
+
+
+def _exception_text(exception: Exception) -> str:
+    try:
+        return repr(exception)[:_EXCEPTION_TEXT_LIMIT]
     except Exception:
-        return _bounded_text(type(exception).__name__)
+        return type(exception).__name__[:_EXCEPTION_TEXT_LIMIT]
 
 
-def _symbolic_proof_report(specification: Any) -> str:
-    if getattr(specification, "kind", None) != ProblemKind.ALGEBRAIC_IDENTITY_COUNTERASSIGNMENT:
+def _generation_issue_text(
+    issues: Any,
+    deadline: float | None = None,
+) -> str | None:
+    _check_deadline(deadline)
+    if issues is None:
+        return None
+    if isinstance(issues, str):
+        return issues[:_EXCEPTION_TEXT_LIMIT] if issues else None
+
+    parts: list[str] = []
+    remaining = _EXCEPTION_TEXT_LIMIT
+    found_issue = False
+
+    for issue in issues:
+        _check_deadline(deadline)
+        issue_text = issue if isinstance(issue, str) else str(issue)
+        if found_issue:
+            parts.append(";")
+            remaining -= 1
+        found_issue = True
+        fragment = issue_text[:remaining]
+        parts.append(fragment)
+        remaining -= len(fragment)
+        if remaining <= 0:
+            break
+
+    _check_deadline(deadline)
+    return "".join(parts) if found_issue else None
+
+
+def _symbolic_proof_report(
+    specification: Any,
+    deadline: float | None = None,
+) -> str:
+    _check_deadline(deadline)
+    if specification.kind != ProblemKind.ALGEBRAIC_IDENTITY_COUNTERASSIGNMENT:
         return ""
-    target = getattr(specification, "algebraic_identity", None)
+
+    target = specification.algebraic_identity
     if target is None:
         return ""
+
     try:
-        left = exact_parse_expression(target.left_expression, target.variables)
-        right = exact_parse_expression(target.right_expression, target.variables)
-        identity_holds = exact_zero(left - right)
-    except Exception:
-        return ""
-    if identity_holds:
-        kind_str = specification.kind.value if hasattr(specification.kind, "value") else str(specification.kind)
-        return "\n".join(
+        left_expression = target.left_expression
+        right_expression = target.right_expression
+        variables = target.variables
+
+        _check_deadline(deadline)
+        left = exact_parse_expression(left_expression, variables)
+        _check_deadline(deadline)
+        right = exact_parse_expression(right_expression, variables)
+        _check_deadline(deadline)
+        difference = left - right
+        _check_deadline(deadline)
+        identity_holds = exact_zero(difference)
+        _check_deadline(deadline)
+
+        if not identity_holds:
+            return ""
+
+        report = "\n".join(
             (
                 "no counterassignment exists",
-                "kind: " + str(kind_str),
-                "left: " + str(target.left_expression),
-                "right: " + str(target.right_expression),
+                "kind: " + specification.kind.value,
+                "left: " + str(left_expression),
+                "right: " + str(right_expression),
                 "reason: identity_holds_symbolically",
             )
         )
-    return ""
+        _check_deadline(deadline)
+        return report
+    except _SearchBudgetExhausted:
+        raise
+    except Exception:
+        _check_deadline(deadline)
+        return ""
 
 
-def _exhausted_report(specification: Any, statistics: dict[str, int], reason: str) -> str:
-    kind_val = specification.kind.value if hasattr(specification.kind, "value") else str(specification.kind)
+def _exhausted_report(
+    specification: Any,
+    statistics: dict[str, int],
+    reason: str,
+    *,
+    last_recovery_error: str = "",
+) -> str:
     lines = [
         "no counterexample found within the search budget",
-        "kind: " + str(kind_val),
+        "kind: " + specification.kind.value,
         "frontiers_examined: " + str(statistics.get("frontiers_examined", 0)),
         "candidates_verified: " + str(statistics.get("candidates_verified", 0)),
         "mutation_rounds: " + str(statistics.get("mutation_rounds", 0)),
-        "reason: " + str(reason),
+        "reason: " + reason,
     ]
-    if getattr(specification, "kind", None) == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
-        lines.append("note: the two dimensional case of the Jacobian conjecture remains open")
+    if last_recovery_error:
+        lines.append("last_recovery_error: " + last_recovery_error)
+    if specification.kind == ProblemKind.PLANAR_CONSTANT_DETERMINANT_COLLISION:
+        lines.append(
+            "note: the two dimensional case of the Jacobian conjecture remains open"
+        )
     return "\n".join(lines)
-
-
-def _extract_candidates(raw_candidates: Any, limit: int) -> list[Any]:
-    if raw_candidates is None or limit <= 0:
-        return []
-    if isinstance(raw_candidates, (str, bytes)):
-        return [raw_candidates]
-    if isinstance(raw_candidates, dict):
-        iterator = iter(raw_candidates.values())
-    else:
-        try:
-            iterator = iter(raw_candidates)
-        except TypeError:
-            return [raw_candidates]
-    result: list[Any] = []
-    while len(result) < limit:
-        try:
-            result.append(next(iterator))
-        except StopIteration:
-            break
-    return result
 
 
 def run(raw_text: str, budget: SearchBudget | None = None) -> str:
     if not isinstance(raw_text, str):
         raise TypeError("raw_text must be a string")
+
+    started_at = time.monotonic()
     limits = budget if budget is not None else SearchBudget()
-    max_seconds = max(MINIMUM_SEARCH_SECONDS, float(limits.max_seconds))
-    deadline = time.monotonic() + max_seconds
+
+    max_seconds = _nonnegative_seconds(limits.max_seconds)
+    max_frontier_visits = _nonnegative_integer(
+        limits.max_frontier_visits,
+        "max_frontier_visits",
+    )
+    max_verified_candidates = _nonnegative_integer(
+        limits.max_verified_candidates,
+        "max_verified_candidates",
+    )
+    max_mutation_rounds = _nonnegative_integer(
+        limits.max_mutation_rounds,
+        "max_mutation_rounds",
+    )
+    max_candidates_per_frontier = _nonnegative_integer(
+        limits.max_candidates_per_frontier,
+        "max_candidates_per_frontier",
+    )
+
+    deadline = started_at + max_seconds
     specification = formalize_request(raw_text)
-    proof = _symbolic_proof_report(specification)
-    if proof:
-        return proof
 
     active: deque[Frontier] = deque()
     known_signatures: set[str] = set()
     last_frontier: Frontier | None = None
-    statistics: dict[str, int] = {
+    last_recovery_error = ""
+
+    statistics = {
         "frontiers_examined": 0,
         "candidates_verified": 0,
         "mutation_rounds": 0,
     }
+    counter_limits = {
+        "candidates_verified": (
+            max_verified_candidates,
+            "candidate_budget_exhausted",
+        ),
+        "mutation_rounds": (
+            max_mutation_rounds,
+            "mutation_budget_exhausted",
+        ),
+    }
 
-    def candidate_exhaustion_reason() -> str:
-        if limits.max_candidates_per_frontier == 0 or statistics["candidates_verified"] >= limits.max_verified_candidates:
-            return "candidate_budget_exhausted"
-        if time.monotonic() >= deadline:
-            return "search_budget_exhausted"
-        return ""
+    def exhausted(reason: str) -> str:
+        return _exhausted_report(
+            specification,
+            statistics,
+            reason,
+            last_recovery_error=last_recovery_error,
+        )
 
-    def frontier_exhaustion_reason() -> str:
-        if statistics["frontiers_examined"] >= limits.max_frontier_visits:
-            return "search_budget_exhausted"
-        return candidate_exhaustion_reason()
-
-    def add_frontiers(frontiers: Iterable[Frontier] | None) -> None:
-        if frontiers is None:
-            return
+    def checked_call(
+        function: Callable[..., _Result],
+        *args: Any,
+        counter: str | None = None,
+        **kwargs: Any,
+    ) -> _Result:
+        _check_deadline(deadline)
+        if counter is not None:
+            limit, reason = counter_limits[counter]
+            if statistics[counter] >= limit:
+                raise _SearchBudgetExhausted(reason)
+            statistics[counter] += 1
         try:
-            iterator = iter(frontiers)
-        except TypeError:
-            return
-        for frontier in iterator:
-            if frontier is None:
-                continue
-            signature = getattr(frontier, "unique_signature", None)
-            if signature is not None and signature not in known_signatures:
+            result = function(*args, **kwargs)
+        except _SearchBudgetExhausted:
+            raise
+        except Exception:
+            _check_deadline(deadline)
+            raise
+        _check_deadline(deadline)
+        return result
+
+    def check_new_frontier_budget() -> None:
+        _check_deadline(deadline)
+        if statistics["frontiers_examined"] >= max_frontier_visits:
+            raise _SearchBudgetExhausted("search_budget_exhausted")
+        if (
+            statistics["candidates_verified"] >= max_verified_candidates
+            or max_candidates_per_frontier == 0
+        ):
+            raise _SearchBudgetExhausted("candidate_budget_exhausted")
+
+    def expansion_available() -> bool:
+        _check_deadline(deadline)
+        return (
+            max_candidates_per_frontier > 0
+            and statistics["candidates_verified"] < max_verified_candidates
+            and statistics["mutation_rounds"] < max_mutation_rounds
+            and statistics["frontiers_examined"] < max_frontier_visits
+        )
+
+    def add_frontiers(frontiers: Iterable[Frontier]) -> None:
+        _check_deadline(deadline)
+        iterator = iter(frontiers)
+
+        while (
+            statistics["frontiers_examined"] < max_frontier_visits
+            and len(active) < max(max_frontier_visits, _FRONTIER_BATCH_SIZE)
+        ):
+            _check_deadline(deadline)
+            try:
+                frontier = next(iterator)
+            except StopIteration:
+                break
+            _check_deadline(deadline)
+
+            signature = frontier.unique_signature
+            if not isinstance(signature, str):
+                raise TypeError("Frontier.unique_signature must be a string")
+            if signature not in known_signatures:
                 known_signatures.add(signature)
                 active.append(frontier)
 
-    def enqueue_repairs(request: Any) -> None:
-        if request is None:
+        _check_deadline(deadline)
+
+    def request_repair(
+        stage: str,
+        frontier: Frontier,
+        **details: Any,
+    ) -> None:
+        nonlocal last_recovery_error
+
+        if not expansion_available():
             return
+
         try:
-            repaired = repair_frontiers(
+            request = checked_call(
+                build_repair_request,
+                stage,
+                frontier,
+                **details,
+            )
+            if not expansion_available():
+                return
+
+            repaired = checked_call(
+                repair_frontiers,
                 specification,
                 request,
-                known_signatures,
-                FRONTIER_BATCH_SIZE,
+                known_signatures.copy(),
+                _FRONTIER_BATCH_SIZE,
                 limits,
             )
             add_frontiers(repaired)
-        except Exception:
-            pass
+        except _SearchBudgetExhausted:
+            raise
+        except Exception as exception:
+            last_recovery_error = (
+                "repair_exception at "
+                + stage
+                + ": "
+                + _exception_text(exception)
+            )
+
+    def attempt_mutation(
+        frontier: Frontier | None,
+        reason: str,
+    ) -> bool | None:
+        nonlocal last_recovery_error
+
+        if not expansion_available():
+            return None
+
+        try:
+            mutated = checked_call(
+                mutate_frontier,
+                frontier,
+                known_signatures.copy(),
+                _FRONTIER_BATCH_SIZE,
+                reason,
+                specification.kind,
+                counter="mutation_rounds",
+            )
+            add_frontiers(mutated)
+            return True
+        except _SearchBudgetExhausted:
+            raise
+        except Exception as exception:
+            last_recovery_error = (
+                "frontier_mutation_exception at "
+                + reason
+                + ": "
+                + _exception_text(exception)
+            )
+            return False
 
     try:
-        add_frontiers(initial_frontiers(specification))
-    except Exception:
-        pass
+        proof = checked_call(
+            _symbolic_proof_report,
+            specification,
+            deadline,
+        )
+        if proof:
+            return proof
 
-    while True:
-        stop_reason = frontier_exhaustion_reason()
-        if stop_reason:
-            return _exhausted_report(specification, statistics, stop_reason)
-
-        if not active:
-            if statistics["mutation_rounds"] >= limits.max_mutation_rounds:
-                return _exhausted_report(specification, statistics, "mutation_budget_exhausted")
-            statistics["mutation_rounds"] += 1
-            if last_frontier is not None:
-                try:
-                    mutated = mutate_frontier(
-                        last_frontier,
-                        known_signatures,
-                        FRONTIER_BATCH_SIZE,
-                        "active_queue_empty",
-                        specification.kind,
-                    )
-                    add_frontiers(mutated)
-                except Exception:
-                    pass
-            if not active:
-                try:
-                    mutated_root = mutate_frontier(
-                        None,
-                        known_signatures,
-                        FRONTIER_BATCH_SIZE,
-                        "active_queue_empty_root",
-                        specification.kind,
-                    )
-                    add_frontiers(mutated_root)
-                except Exception:
-                    pass
-            if not active:
-                if time.monotonic() >= deadline:
-                    return _exhausted_report(specification, statistics, "search_budget_exhausted")
-                return _exhausted_report(specification, statistics, "frontier_space_exhausted")
-
-        frontier = active.popleft()
-        last_frontier = frontier
-        statistics["frontiers_examined"] += 1
+        check_new_frontier_budget()
 
         try:
-            generated = generate_search_code(specification, frontier, limits)
+            add_frontiers(
+                checked_call(initial_frontiers, specification)
+            )
+        except _SearchBudgetExhausted:
+            raise
         except Exception as exception:
+            last_recovery_error = (
+                "initial_frontiers_exception: "
+                + _exception_text(exception)
+            )
+
+        while True:
+            check_new_frontier_budget()
+
+            if not active:
+                mutation_completed = attempt_mutation(
+                    last_frontier,
+                    "active_queue_empty",
+                )
+                root_mutation_completed = None
+
+                if not active:
+                    root_mutation_completed = attempt_mutation(
+                        None,
+                        "active_queue_empty_root",
+                    )
+
+                check_new_frontier_budget()
+
+                if not active:
+                    if statistics["mutation_rounds"] >= max_mutation_rounds:
+                        raise _SearchBudgetExhausted(
+                            "mutation_budget_exhausted"
+                        )
+                    if (
+                        mutation_completed is False
+                        or root_mutation_completed is False
+                    ):
+                        return exhausted("frontier_mutation_exception")
+                    return exhausted("frontier_space_exhausted")
+
+            frontier = active.popleft()
+            last_frontier = frontier
+            statistics["frontiers_examined"] += 1
+
             try:
-                request = build_repair_request(
+                generated = checked_call(
+                    generate_search_code,
+                    specification,
+                    frontier,
+                    limits,
+                )
+                generation_error_text = _generation_issue_text(
+                    generated.generation_issues,
+                    deadline,
+                )
+            except _SearchBudgetExhausted:
+                raise
+            except Exception as exception:
+                request_repair(
                     "code_generation_exception",
                     frontier,
                     exception_text=_exception_text(exception),
                 )
-                enqueue_repairs(request)
-            except Exception:
-                pass
-            continue
+                continue
 
-        generation_issues_text = ""
-        if getattr(generated, "generation_issues", None):
-            try:
-                generation_issues_text = ";".join(str(issue) for issue in generated.generation_issues)
-            except Exception:
-                generation_issues_text = str(generated.generation_issues)
-
-        if generation_issues_text:
-            try:
-                request = build_repair_request(
+            if generation_error_text is not None:
+                request_repair(
                     "code_generation_exception",
                     frontier,
-                    exception_text=_bounded_text(generation_issues_text),
+                    exception_text=generation_error_text,
                 )
-                enqueue_repairs(request)
-            except Exception:
-                pass
-            continue
+                continue
 
-        execution_result = None
-        try:
-            execution_result = execute_generated_code(generated, specification, frontier, limits)
-        except Exception as exception:
+            execution_result = None
             try:
-                request = build_repair_request(
+                execution_result = checked_call(
+                    execute_generated_code,
+                    generated,
+                    specification,
+                    frontier,
+                    limits,
+                )
+                candidate_iterator = iter(execution_result.candidates)
+                execution_exception_text = execution_result.exception_text
+            except _SearchBudgetExhausted:
+                raise
+            except Exception as exception:
+                request_repair(
                     "execution_or_empty_frontier",
                     frontier,
+                    execution_result=execution_result,
                     exception_text=_exception_text(exception),
                 )
-                enqueue_repairs(request)
-            except Exception:
-                pass
-            continue
+                continue
 
-        remaining_candidates = limits.max_verified_candidates - statistics["candidates_verified"]
-        if remaining_candidates <= 0:
-            return _exhausted_report(specification, statistics, "candidate_budget_exhausted")
+            _check_deadline(deadline)
+            candidates_seen = 0
+            iterator_failed = False
 
-        candidate_limit = min(limits.max_candidates_per_frontier, remaining_candidates)
-        raw_candidates = getattr(execution_result, "candidates", None)
-        candidates = _extract_candidates(raw_candidates, candidate_limit)
+            for _ in range(max_candidates_per_frontier):
+                _check_deadline(deadline)
+                if (
+                    statistics["candidates_verified"]
+                    >= max_verified_candidates
+                ):
+                    raise _SearchBudgetExhausted(
+                        "candidate_budget_exhausted"
+                    )
 
-        if not candidates:
-            try:
-                exec_exc = getattr(execution_result, "exception_text", None)
-                request = build_repair_request(
-                    "no_candidate_returned",
-                    frontier,
-                    execution_result=execution_result,
-                    exception_text=_bounded_text(exec_exc) if exec_exc else "",
-                )
-                enqueue_repairs(request)
-            except Exception:
-                pass
-            continue
-
-        for candidate in candidates:
-            stop_reason = candidate_exhaustion_reason()
-            if stop_reason:
-                return _exhausted_report(specification, statistics, stop_reason)
-
-            statistics["candidates_verified"] += 1
-
-            try:
-                verification = verify_candidate(specification, candidate)
-            except Exception as exception:
-                verification = VerificationResult(
-                    False,
-                    candidate,
-                    (type(exception).__name__,),
-                    {"exception": _exception_text(exception)},
-                )
-
-            if not getattr(verification, "passed", False):
                 try:
-                    request = build_repair_request(
+                    candidate = checked_call(next, candidate_iterator)
+                except StopIteration:
+                    break
+                except _SearchBudgetExhausted:
+                    raise
+                except Exception as exception:
+                    iterator_failed = True
+                    request_repair(
+                        "execution_or_empty_frontier",
+                        frontier,
+                        execution_result=execution_result,
+                        exception_text=_exception_text(exception),
+                    )
+                    break
+
+                candidates_seen += 1
+
+                try:
+                    verification = checked_call(
+                        verify_candidate,
+                        specification,
+                        candidate,
+                        counter="candidates_verified",
+                    )
+                    verification_passed = bool(verification.passed)
+                except _SearchBudgetExhausted:
+                    raise
+                except Exception as exception:
+                    verification = VerificationResult(
+                        False,
+                        candidate,
+                        (type(exception).__name__,),
+                        {"exception": _exception_text(exception)},
+                    )
+                    verification_passed = False
+
+                _check_deadline(deadline)
+
+                if not verification_passed:
+                    request_repair(
                         "verification_rejection",
                         frontier,
                         verification_result=verification,
                         execution_result=execution_result,
                     )
-                    enqueue_repairs(request)
-                except Exception:
-                    pass
-                continue
+                    continue
 
-            try:
-                critique = critique_candidate(specification, candidate, verification, generated, frontier)
-            except Exception as exception:
                 try:
-                    request = build_repair_request(
+                    critique = checked_call(
+                        critique_candidate,
+                        specification,
+                        candidate,
+                        verification,
+                        generated,
+                        frontier,
+                    )
+                    critique_passed = bool(critique.passed)
+                except _SearchBudgetExhausted:
+                    raise
+                except Exception as exception:
+                    request_repair(
                         "critique_exception",
                         frontier,
                         verification_result=verification,
+                        execution_result=execution_result,
                         exception_text=_exception_text(exception),
                     )
-                    enqueue_repairs(request)
-                except Exception:
-                    pass
-                continue
+                    continue
 
-            if not getattr(critique, "passed", False):
-                try:
-                    request = build_repair_request(
+                _check_deadline(deadline)
+
+                if not critique_passed:
+                    request_repair(
                         "critique_rejection",
                         frontier,
                         verification_result=verification,
                         critique_result=critique,
                         execution_result=execution_result,
                     )
-                    enqueue_repairs(request)
-                except Exception:
-                    pass
-                continue
+                    continue
 
-            try:
-                output = format_candidate(specification, candidate)
-            except Exception as exception:
                 try:
-                    request = build_repair_request(
+                    output = checked_call(
+                        format_candidate,
+                        specification,
+                        candidate,
+                    )
+                    if not isinstance(output, str):
+                        raise TypeError(
+                            "format_candidate must return a string"
+                        )
+                    if not output.strip():
+                        raise ValueError(
+                            "format_candidate returned empty or "
+                            "whitespace-only output"
+                        )
+                except _SearchBudgetExhausted:
+                    raise
+                except Exception as exception:
+                    request_repair(
                         "format_exception",
                         frontier,
                         verification_result=verification,
                         critique_result=critique,
+                        execution_result=execution_result,
                         exception_text=_exception_text(exception),
                     )
-                    enqueue_repairs(request)
-                except Exception:
-                    pass
-                continue
+                    continue
 
-            if output and isinstance(output, str) and output.strip():
+                _check_deadline(deadline)
                 return output
 
-            try:
-                request = build_repair_request(
-                    "format_exception",
+            if candidates_seen == 0 and not iterator_failed:
+                request_repair(
+                    "no_candidate_returned",
                     frontier,
-                    verification_result=verification,
-                    critique_result=critique,
-                    exception_text="format_candidate_returned_empty_output",
+                    execution_result=execution_result,
+                    exception_text=execution_exception_text,
                 )
-                enqueue_repairs(request)
-            except Exception:
-                pass
+
+    except _SearchBudgetExhausted as exception:
+        return exhausted(exception.reason)
