@@ -1,0 +1,7 @@
+no counterexample found within the search budget
+kind: planar_constant_determinant_collision
+frontiers_examined: 9
+candidates_verified: 0
+mutation_rounds: 0
+reason: search_budget_exhausted
+note: the two dimensional case of the Jacobian conjecture remains open

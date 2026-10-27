@@ -1,0 +1,154 @@
+==============================================================================
+planar Jacobian conjecture -- exact counterexample search
+==============================================================================
+
+[F0] positive control: the known three dimensional counterexample
+  map = (x**3*y**3*z + 3*x**2*y**4 + 3*x**2*y**2*z + 7*x*y**3 + 3*x*y*z + 4*y**2 + z, 3*x**3*y**2*z + 9*x**2*y**3 + 6*x**2*y*z + 12*x*y**2 + 3*x*z + y, -x**3*z - 3*x**2*y + 2*x)
+  det J = -2 | constant and nonzero: True
+    F(-1, 3/2, 13/2) = (-1/4, 0, 0)
+    F(0, 0, -1/4) = (-1/4, 0, 0)
+    F(1, -3/2, 13/2) = (-1/4, 0, 0)
+  three distinct points, one image: True True
+  => the verification pipeline does detect a genuine counterexample.
+
+[F1] complete classification of degree <= 2 Keller maps
+  ansatz: P = a*x**2 + b*x*y + c*y**2 + x   Q = d*x**2 + e*x*y + f*y**2 + y
+  det J - 1 = x**2*(2*a*e - 2*b*d) + x*y*(4*a*f - 4*c*d) + x*(2*a + e) + y**2*(2*b*f - 2*c*e) + y*(b + 2*f)
+  coefficient equations: [2*a*e - 2*b*d, 4*a*f - 4*c*d, 2*a + e, 2*b*f - 2*c*e, b + 2*f]
+  Groebner basis: [2*a + e, b + 2*f, 2*c*d + e*f, c*e + 2*f**2, 4*d*f - e**2]
+  solutions: [{a: -e/2, b: -2*f, c: -2*f**2/e, d: e**2/(4*f)}, {a: 0, b: 0, d: 0, e: 0, f: 0}]
+  generic family: P = f**2*y**2/s - 2*f*x*y + s*x**2 + x  Q = f*y**2 - 2*s*x*y + y + s**2*x**2/f
+  det J = 1 | P - (s/f) Q = -f*y/s + x
+  rational member: P = 2*x**2 - 6*x*y + x + 9*y**2/2  Q = 4*x**2/3 - 4*x*y + 3*y**2 + y
+  its det J = 1 | fibre at (0,0): 1
+  inverse: (-2*X**2 + 6*X*Y + X - 9*Y**2/2, -4*X**2/3 + 4*X*Y - 3*Y**2 + Y) | verified: True
+
+[F2] triangular maps: Q = f(x), general P of degree <= 2, f of degree <= 4
+  identity det J = -P_y f'(x): True
+  solutions of the coefficient system: [{p1: 0, p2: 0, p4: 0}, {q1: 0, q2: 0, q3: 0, q4: 0}, {p2: 0, p4: 0, q2: 0, q3: 0, q4: 0}]
+    branch {p1: 0, p2: 0, p4: 0}
+      P = p0 + p3*x + p5*x**2  Q = q0 + q1*x + q2*x**2 + q3*x**3 + q4*x**4
+      det J = 0 | nonzero constant: False | inverse verified: False
+    branch {q1: 0, q2: 0, q3: 0, q4: 0}
+      P = p0 + p1*y + p2*y**2 + p3*x + p4*x*y + p5*x**2  Q = q0
+      det J = 0 | nonzero constant: False | inverse verified: False
+    branch {p2: 0, p4: 0, q2: 0, q3: 0, q4: 0}
+      P = p0 + p1*y + p3*x + p5*x**2  Q = q0 + q1*x
+      det J = -p1*q1 | nonzero constant: True | inverse verified: True
+  every nonzero-constant branch is invertible: True
+
+[F3] nilpotent 2x2 matrices and cubic-linear maps X + (A X)^{*3}
+  A = u v^T: Matrix([[m*s, n*s], [m*t, n*t]])   A^2 - (v.u) A = Matrix([[0, 0], [0, 0]])
+  normal form conjugation: Matrix([[0, 1/lambda], [0, 0]])
+    A = Matrix([[0, 1], [0, 0]]) rank 1 A^2 = 0: True
+    A = Matrix([[1, 1], [-1, -1]]) rank 1 A^2 = 0: True
+    A = Matrix([[2, 1], [-4, -2]]) rank 1 A^2 = 0: True
+    A = Matrix([[3, 2], [-2, -1]]) rank 2 A^2 = 0: False
+  family: P = m**3*s**3*x**3 + 3*m**2*n*s**3*x**2*y + 3*m*n**2*s**3*x*y**2 + n**3*s**3*y**3 + x  Q = m**3*t**3*x**3 + 3*m**2*n*t**3*x**2*y + 3*m*n**2*t**3*x*y**2 + n**3*t**3*y**3 + y
+  det J on the nilpotency locus: 3*m**3*s**5*y**2/t**2 - 6*m**3*s**4*x*y/t + 3*m**3*s**3*x**2 - 3*m**3*s**3*y**2 + 6*m**3*s**2*t*x*y - 3*m**3*s*t**2*x**2 + 1
+  constancy equations (factored): [3*m**3*s*(s - t)*(s + t), -6*m**3*s**2*(s - t)*(s + t)/t, 3*m**3*s**3*(s - t)*(s + t)/t**2]
+  their solutions: [{t: -s}, {t: s}]
+  integer matrices scanned: 625 | constant nonzero det: 17
+    A = Matrix([[-2, -2], [2, 2]]) | det J = 1 | fibre 1 | inverse verified True
+    A = Matrix([[-2, 2], [-2, 2]]) | det J = 1 | fibre 1 | inverse verified True
+    A = Matrix([[-1, -1], [1, 1]]) | det J = 1 | fibre 1 | inverse verified True
+    A = Matrix([[-1, 1], [-1, 1]]) | det J = 1 | fibre 1 | inverse verified True
+    A = Matrix([[0, -2], [0, 0]]) | det J = 1 | fibre 1 | inverse verified True
+    A = Matrix([[0, -1], [0, 0]]) | det J = 1 | fibre 1 | inverse verified True
+  all Keller cubic-linear maps injective: True
+
+[F4] complete classification of cubic homogeneous Keller maps
+  ansatz: P = a*x**3 + b*x**2*y + c*x*y**2 + d*y**3 + x  Q = e*x**3 + f*x**2*y + g*x*y**2 + h*y**3 + y
+  equations: [3*a*f - 3*b*e, 6*a*g - 6*c*e, 9*a*h + 3*b*g - 3*c*f - 9*d*e, 3*a + f, 6*b*h - 6*d*f, 2*b + 2*g, 3*c*h - 3*d*g, c + 3*h]
+  Groebner basis: [-e*(3*f*h - g**2), -27*e*h**2 + g**3, -h*(3*f*h - g**2), 3*d*e - 2*f*h + g**2, d*f + g*h, -3*e*g + f**2, d*g + 3*h**2, -9*e*h + f*g, 3*a + f, b + g, c + 3*h]
+  reduced equations after the linear relations: [-3*e*f*h + e*g**2, -27*e*h**2 + g**3, -3*f*h**2 + g**2*h, 3*d*e - 2*f*h + g**2, d*f + g*h, -3*e*g + f**2, d*g + 3*h**2, -9*e*h + f*g]
+  degenerate case f = g = h = 0: {'equations': [0, 0, 0, 3*d*e, 0, 0, 0, 0], 'solutions': [{d: 0}, {e: 0}]}
+  case h = 0 (then g = 0 too): [{g: 0, h: 0}]
+  identification of the generic solution with lambda L^3, mu L^3: (0, 0)
+  lambda + t mu = 0
+  generic solutions: [{a: -f/3, b: -g, c: -g**2/f, d: -g**3/(3*f**2), e: f**2/(3*g), h: g**2/(3*f)}, {a: 0, b: 0, c: 0, e: 0, f: 0, g: 0, h: 0}, {a: 0, b: 0, c: 0, e: 0, f: 0, g: 0, h: 0}]
+  closed form H = (lambda*(t*y + x)**3, mu*(t*y + x)**3)
+  det J = 3*lambda*t**2*y**2 + 6*lambda*t*x*y + 3*lambda*x**2 + 3*mu*t**3*y**2 + 6*mu*t**2*x*y + 3*mu*t*x**2 + 1
+  with the constancy condition lambda = -t mu: det J = 1
+  inverse: (X + mu*t*(X + Y*t)**3, Y - mu*(X + Y*t)**3)
+  inverse checks (must be 0, 0): (0, 0)
+  rational member: P = -2*x**3/3 - 4*x**2*y/15 - 8*x*y**2/225 + x - 16*y**3/10125  Q = 5*x**3 + 2*x**2*y + 4*x*y**2/15 + 8*y**3/675 + y
+  det J = 1 | fibre at (0,0): 1
+  inverse: (2*X**3/3 + 4*X**2*Y/15 + 8*X*Y**2/225 + X + 16*Y**3/10125, -5*X**3 - 2*X**2*Y - 4*X*Y**2/15 - 8*Y**3/675 + Y) | verified: True | polynomial: True
+
+[F5] exhaustive scan of cubic homogeneous maps, coefficients in [-2,2]^8
+  parameter tuples scanned: 390625
+  tuples with det J a nonzero constant: 9
+     (0, 0, 0, -2, 0, 0, 0, 0) F = ( x - 2*y**3 , y ) | fibre 1 | inverse verified True
+     (0, 0, 0, -1, 0, 0, 0, 0) F = ( x - y**3 , y ) | fibre 1 | inverse verified True
+     (0, 0, 0, 0, -2, 0, 0, 0) F = ( x , -2*x**3 + y ) | fibre 1 | inverse verified True
+     (0, 0, 0, 0, -1, 0, 0, 0) F = ( x , -x**3 + y ) | fibre 1 | inverse verified True
+     (0, 0, 0, 0, 0, 0, 0, 0) F = ( x , y ) | fibre 1 | inverse verified True
+     (0, 0, 0, 0, 1, 0, 0, 0) F = ( x , x**3 + y ) | fibre 1 | inverse verified True
+     (0, 0, 0, 0, 2, 0, 0, 0) F = ( x , 2*x**3 + y ) | fibre 1 | inverse verified True
+     (0, 0, 0, 1, 0, 0, 0, 0) F = ( x + y**3 , y ) | fibre 1 | inverse verified True
+     (0, 0, 0, 2, 0, 0, 0, 0) F = ( x + 2*y**3 , y ) | fibre 1 | inverse verified True
+  all injective: True
+
+[F6] compositions of elementary automorphisms (the tame group)
+  maps tested: 97 | with constant nonzero det J: 97
+  with an inverse verified by exact substitution: 97
+  counterexamples: []
+  maximal degree: 6 | degrees present: [1, 2, 3, 4, 6]
+
+[F8] the family (x + lambda L^k, y + mu L^k) at every degree k
+  k = 2
+    det J = 2*lambda*t*y + 2*lambda*x + 2*mu*t**2*y + 2*mu*t*x + 1 | = 1 + k(lambda+t mu)L^(k-1): True
+    under lambda = -t mu: det J = 1 | inverse verified: True
+  k = 3
+    det J = 3*lambda*t**2*y**2 + 6*lambda*t*x*y + 3*lambda*x**2 + 3*mu*t**3*y**2 + 6*mu*t**2*x*y + 3*mu*t*x**2 + 1 | = 1 + k(lambda+t mu)L^(k-1): True
+    under lambda = -t mu: det J = 1 | inverse verified: True
+  k = 4
+    det J = 4*lambda*t**3*y**3 + 12*lambda*t**2*x*y**2 + 12*lambda*t*x**2*y + 4*lambda*x**3 + 4*mu*t**4*y**3 + 12*mu*t**3*x*y**2 + 12*mu*t**2*x**2*y + 4*mu*t*x**3 + 1 | = 1 + k(lambda+t mu)L^(k-1): True
+    under lambda = -t mu: det J = 1 | inverse verified: True
+  k = 5
+    det J = 5*lambda*t**4*y**4 + 20*lambda*t**3*x*y**3 + 30*lambda*t**2*x**2*y**2 + 20*lambda*t*x**3*y + 5*lambda*x**4 + 5*mu*t**5*y**4 + 20*mu*t**4*x*y**3 + 30*mu*t**3*x**2*y**2 + 20*mu*t**2*x**3*y + 5*mu*t*x**4 + 1 | = 1 + k(lambda+t mu)L^(k-1): True
+    under lambda = -t mu: det J = 1 | inverse verified: True
+  k = 6
+    det J = 6*lambda*t**5*y**5 + 30*lambda*t**4*x*y**4 + 60*lambda*t**3*x**2*y**3 + 60*lambda*t**2*x**3*y**2 + 30*lambda*t*x**4*y + 6*lambda*x**5 + 6*mu*t**6*y**5 + 30*mu*t**5*x*y**4 + 60*mu*t**4*x**2*y**3 + 60*mu*t**3*x**3*y**2 + 30*mu*t**2*x**4*y + 6*mu*t*x**5 + 1 | = 1 + k(lambda+t mu)L^(k-1): True
+    under lambda = -t mu: det J = 1 | inverse verified: True
+  k = 7
+    det J = 7*lambda*t**6*y**6 + 42*lambda*t**5*x*y**5 + 105*lambda*t**4*x**2*y**4 + 140*lambda*t**3*x**3*y**3 + 105*lambda*t**2*x**4*y**2 + 42*lambda*t*x**5*y + 7*lambda*x**6 + 7*mu*t**7*y**6 + 42*mu*t**6*x*y**5 + 105*mu*t**5*x**2*y**4 + 140*mu*t**4*x**3*y**3 + 105*mu*t**3*x**4*y**2 + 42*mu*t**2*x**5*y + 7*mu*t*x**6 + 1 | = 1 + k(lambda+t mu)L^(k-1): True
+    under lambda = -t mu: det J = 1 | inverse verified: True
+
+[F7] near misses: maps that really do collide
+  P = x**2  Q = x**3 + y
+    det J = 2*x | constant: False
+    fibre of F(1,0): 2 distinct points [(-1, 2), (1, 0)]
+    exact collision (1,0) ~ (-1, 2) | dP = 0 dQ = 0
+    det J factored: 2*x | zero locus: [{x: 0}]
+  P = x**3 + x  Q = x**3 + y
+    det J = 3*x**2 + 1 | constant: False
+    fibre of F(1,0): 3 distinct points [(1, 0), (-1/2 - sqrt(7)*I/2, -3/2 - sqrt(7)*I/2), (-1/2 + sqrt(7)*I/2, -3/2 + sqrt(7)*I/2)]
+    exact collision (1,0) ~ (-1/2 - sqrt(7)*I/2, -3/2 - sqrt(7)*I/2) | dP = 0 dQ = 0
+    det J factored: 3*x**2 + 1 | zero locus: [{x: -sqrt(3)*I/3}, {x: sqrt(3)*I/3}]
+  P = x + y**2  Q = x**2 + y
+    det J = -4*x*y + 1 | constant: False
+    fibre of F(1,0): 4 distinct points [(0, 1), (1, 0), (-sqrt(5)/2 - 1/2, -sqrt(5)/2 - 1/2), (-1/2 + sqrt(5)/2, -1/2 + sqrt(5)/2)]
+    exact collision (1,0) ~ (0, 1) | dP = 0 dQ = 0
+    det J factored: -4*x*y + 1 | zero locus: [{x: 1/(4*y)}]
+
+==============================================================================
+tally of exactly verified Keller maps (condition (J) holds)
+==============================================================================
+  F1 degree <= 2, complete classification              all solutions          explicit inverse
+  F2 triangular, complete classification               constant det branches: 1 inverse verified: True
+  F3 cubic-linear, 2x2 matrices in [-2,2]              17                     all injective: True
+  F4 cubic homogeneous, complete classification        all solutions          inverse verified: True
+  F5 cubic homogeneous box scan, 390625 tuples         9                      all injective: True
+  F6 tame group compositions                           97                     verified inverses: 97
+  F8 (x + lam L^k, y + mu L^k), k = 2..7               7 families             all inverse verified: True
+
+  colliding maps found (F7): 3, each with a NON-constant determinant
+
+total wall clock: 656.2 s
+
+VERDICT: no pair (P, Q) satisfying (J) and (C) was produced.
+Every Keller map in lanes F1-F6 is injective: either its fibre at a tested
+point has size 1, or an explicit polynomial inverse was verified by exact
+substitution. Every colliding map found in F7 has a non-constant determinant.
