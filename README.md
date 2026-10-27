@@ -87,3 +87,23 @@ x = -1
 ```
 python -m pytest
 ```
+
+## Planar Jacobian search (added later)
+
+`scripts/jc_planar_search.py` is an independent, self contained exact search for a
+counterexample to the *two dimensional* Jacobian conjecture, plus a written report:
+
+* `scripts/jc_planar_search.py` — lanes F0–F9, exact SymPy only,
+* `reports/planar_search_transcript.txt` — full run (about 14 minutes),
+* `reports/jacobian_2d_report.md` — what is proved, what is only scanned,
+* `reports/self_critique.md` — the critique of the first version and the fixes,
+* `tests/test_planar_search.py` — fast regression tests.
+
+No counterexample is produced; the lanes that are complete (degree <= 2, triangular,
+cubic-linear, cubic homogeneous, one linear form in every degree) all prove
+invertibility with explicit polynomial inverses.  Run it with
+
+```
+python scripts/jc_planar_search.py
+python scripts/jc_planar_search.py F1,F4      # selected lanes
+```

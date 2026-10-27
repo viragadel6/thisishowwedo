@@ -1,0 +1,179 @@
+==============================================================================
+planar Jacobian conjecture -- exact counterexample search (version 2)
+==============================================================================
+
+[F0] positive control: the known three dimensional counterexample
+  map = (x**3*y**3*z + 3*x**2*y**4 + 3*x**2*y**2*z + 7*x*y**3 + 3*x*y*z + 4*y**2 + z, 3*x**3*y**2*z + 9*x**2*y**3 + 6*x**2*y*z + 12*x*y**2 + 3*x*z + y, -x**3*z - 3*x**2*y + 2*x)
+  det J = -2 | second route: -2 | routes agree: True
+  det J is the nonzero constant -2: True
+    F(-1, 3/2, 13/2) = (-1/4, 0, 0)
+    F(0, 0, -1/4) = (-1/4, 0, 0)
+    F(1, -3/2, 13/2) = (-1/4, 0, 0)
+  three distinct points, one image: True True
+
+[F1] complete classification of degree <= 2 Keller maps
+  ansatz: P = a*x**2 + b*x*y + c*y**2 + x  Q = d*x**2 + e*x*y + f*y**2 + y
+  coefficient equations: [b + 2*f, 2*b*f - 2*c*e, 2*a + e, 4*a*f - 4*c*d, 2*a*e - 2*b*d]
+  Groebner basis: [2*a + e, b + 2*f, 2*c*d + e*f, c*e + 2*f**2, 4*d*f - e**2]
+  constant term of det J = det of the linear part: l11*l22 - l12*l21 | identity verified: True (nonzero constant => invertible linear part, so the normalisation is complete)
+    branch {a: -e/2, b: -2*f, c: -2*f**2/e, d: e**2/(4*f)}
+      det J = 1 | nonzero constant: True | inverse verified: True
+    branch {a: 0, b: 0, d: 0, e: 0, f: 0}
+      det J = 1 | nonzero constant: True | inverse verified: True
+  all admissible branches invertible: True
+  generic family: P = f**2*y**2/s - 2*f*x*y + s*x**2 + x  Q = f*y**2 - 2*s*x*y + y + s**2*x**2/f
+  det J = 1 | P - (f/s) Q = -f*y/s + x
+  generic inverse checks (must be 0, 0): (0, 0)
+  rational member: P = 2*x**2 - 6*x*y + x + 9*y**2/2  Q = 4*x**2/3 - 4*x*y + 3*y**2 + y
+  det J = 1 | points in fibre at (0,0): 1
+  inverse: (-2*X**2 + 6*X*Y + X - 9*Y**2/2, -4*X**2/3 + 4*X*Y - 3*Y**2 + Y) | verified: True
+
+[F2] triangular maps, complete for all degrees
+  deg_y P = 1 | det J = -P_y f'(x): True | leading y-coefficient identity: True
+  deg_y P = 2 | det J = -P_y f'(x): True | leading y-coefficient identity: True
+  deg_y P = 3 | det J = -P_y f'(x): True | leading y-coefficient identity: True
+  deg_y P = 4 | det J = -P_y f'(x): True | leading y-coefficient identity: True
+  surviving form: P = c1*y + g0 + g1*x + g2*x**2 + g3*x**3 + g4*x**4  Q = q0 + q1*x
+  its det J = -c1*q1
+  inverse checks (must be 0, 0): (0, 0)
+  argument: p1 and f' both constant (a product of polynomials is constant only if both are)
+
+[F3] nilpotent 2x2 matrices and cubic-linear maps (no nonzero assumptions)
+  P = m**3*s**3*x**3 + 3*m**2*n*s**3*x**2*y + 3*m*n**2*s**3*x*y**2 + n**3*s**3*y**3 + x  Q = m**3*t**3*x**3 + 3*m**2*n*t**3*x**2*y + 3*m*n**2*t**3*x*y**2 + n**3*t**3*y**3 + y
+  det J = 1 + 3 L^2 (s^3 m + t^3 n): True
+  on the nilpotency locus s^3 m + t^3 n = tn(t^2 - s^2): 0
+    case m = n = 0 (A = 0) | map = (x, y) | det J = 1 | inverse verified: True
+    case shear: s = 0, n = 0 | map = (x, m**3*t**3*x**3 + y) | det J = 1 | inverse verified: True
+    case shear: t = 0, m = 0 | map = (n**3*s**3*y**3 + x, y) | det J = 1 | inverse verified: True
+    case shear: s = 0, t = 0 (A = 0) | map = (x, y) | det J = 1 | inverse verified: True
+    case shear: m = 0, n = 0 (A = 0) | map = (x, y) | det J = 1 | inverse verified: True
+    case t = +1 s, n = -m/t*s | map = (m**3*s**3*x**3 - 3*m**3*s**3*x**2*y + 3*m**3*s**3*x*y**2 - m**3*s**3*y**3 + x, m**3*s**3*x**3 - 3*m**3*s**3*x**2*y + 3*m**3*s**3*x*y**2 - m**3*s**3*y**3 + y) | det J = 1 | inverse verified: True
+    case t = -1 s, n = -m/t*s | map = (m**3*s**3*x**3 + 3*m**3*s**3*x**2*y + 3*m**3*s**3*x*y**2 + m**3*s**3*y**3 + x, -m**3*s**3*x**3 - 3*m**3*s**3*x**2*y - 3*m**3*s**3*x*y**2 - m**3*s**3*y**3 + y) | det J = 1 | inverse verified: True
+  all cases invertible: True
+  integer matrices in [-2,2]^4: 625 | constant nonzero det: 17 | nilpotent: 17 | same set: True
+    A = Matrix([[-2, -2], [2, 2]]) | det J = 1 | points in fibre: 1 | inverse verified: True
+    A = Matrix([[-2, 2], [-2, 2]]) | det J = 1 | points in fibre: 1 | inverse verified: True
+    A = Matrix([[-1, -1], [1, 1]]) | det J = 1 | points in fibre: 1 | inverse verified: True
+    A = Matrix([[-1, 1], [-1, 1]]) | det J = 1 | points in fibre: 1 | inverse verified: True
+    A = Matrix([[0, -2], [0, 0]]) | det J = 1 | points in fibre: 1 | inverse verified: True
+  all injective: True
+
+[F4] complete classification of cubic homogeneous Keller maps
+  ansatz: P = a*x**3 + b*x**2*y + c*x*y**2 + d*y**3 + x  Q = e*x**3 + f*x**2*y + g*x*y**2 + h*y**3 + y
+  equations: [c + 3*h, 3*c*h - 3*d*g, 2*b + 2*g, 6*b*h - 6*d*f, 3*a + f, 9*a*h + 3*b*g - 3*c*f - 9*d*e, 6*a*g - 6*c*e, 3*a*f - 3*b*e]
+  Groebner basis: [3*a + f, b + g, c + 3*h, 3*d*e - 2*f*h + g**2, d*f + g*h, d*g + 3*h**2, 3*e*g - f**2, 9*e*h - f*g, f*(3*f*h - g**2), g*(3*f*h - g**2), h*(3*f*h - g**2)]
+  linear relations present in the basis: True
+  case h = 0 with g != 0 reduces to g^2, impossible: True
+  case h = 0 reduced equations: [3*a, b, c, 3*d*e]
+  case h = 0 solutions: [{a: 0, b: 0, c: 0, d: 0}, {a: 0, b: 0, c: 0, e: 0}]
+    P = x  Q = e*x**3 + y  det J = 1  inverse verified: True
+    P = d*y**3 + x  Q = y  det J = 1  inverse verified: True
+  case h != 0 with g = 0 collapses to 3h^2 = 0, impossible: True
+    reduced equations with g = 0: [3*a + f, b, c + 3*h, 3*d*e - 2*f*h, d*f, 3*h**2, -f**2, 9*e*h, 3*f**2*h, 3*f*h**2]
+    reduced equations with g = 0 and f = 0: [3*a, b, c + 3*h, 3*d*e, 3*h**2, 9*e*h]
+  generic solution: {a: -f/3, b: -g, c: -g**2/f, d: -g**3/(3*f**2), e: f**2/(3*g), h: g**2/(3*f)}
+  closed form H = (lambda*(t*y + x)**3, mu*(t*y + x)**3)
+  det J = 3*lambda*t**2*y**2 + 6*lambda*t*x*y + 3*lambda*x**2 + 3*mu*t**3*y**2 + 6*mu*t**2*x*y + 3*mu*t*x**2 + 1
+  with lam + t mu = 0: det J = 1 | lam + t mu = 0
+  identification of the solution with the closed form: (0, 0)
+  inverse checks (must be 0, 0): (0, 0)
+  rational member: P = -2*x**3/3 - 4*x**2*y/15 - 8*x*y**2/225 + x - 16*y**3/10125  Q = 5*x**3 + 2*x**2*y + 4*x*y**2/15 + 8*y**3/675 + y
+  det J = 1 | fibre at (0,0): points = 1 (lower bound from one elimination polynomial: 1 )
+  inverse: (2*X**3/3 + 4*X**2*Y/15 + 8*X*Y**2/225 + X + 16*Y**3/10125, -5*X**3 - 2*X**2*Y - 4*X*Y**2/15 - 8*Y**3/675 + Y) | verified: True
+
+[F5] exhaustive box scan of cubic homogeneous maps, coefficients in [-2,2]^8
+  tuples scanned: 390625 | with constant nonzero det J: 9
+     (0, 0, 0, -2, 0, 0, 0, 0) F = ( x - 2*y**3 , y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, -1, 0, 0, 0, 0) F = ( x - y**3 , y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, 0, -2, 0, 0, 0) F = ( x , -2*x**3 + y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, 0, -1, 0, 0, 0) F = ( x , -x**3 + y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, 0, 0, 0, 0, 0) F = ( x , y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, 0, 1, 0, 0, 0) F = ( x , x**3 + y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, 0, 2, 0, 0, 0) F = ( x , 2*x**3 + y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, 1, 0, 0, 0, 0) F = ( x + y**3 , y ) | fibre points: 1 | inverse verified: True
+     (0, 0, 0, 2, 0, 0, 0, 0) F = ( x + 2*y**3 , y ) | fibre points: 1 | inverse verified: True
+  all injective: True
+
+[F6] compositions of elementary automorphisms (the tame group)
+  tested: 66 | constant nonzero det J: 66 | inverses verified: 66 | max degree: 6
+  failures: []
+
+[F7] near misses: maps that really do collide
+  P = x**2  Q = x**3 + y
+    det J = 2*x | constant: False
+    fibre of F(1,0): scheme length 2 | distinct points found 2
+    exact collision (1,0) ~ (-1, 2) | dP = 0  dQ = 0
+  P = x**3 + x  Q = x**3 + y
+    det J = 3*x**2 + 1 | constant: False
+    fibre of F(1,0): scheme length 3 | distinct points found 3
+    exact collision (1,0) ~ (-1/2 - sqrt(7)*I/2, -3/2 - sqrt(7)*I/2) | dP = 0  dQ = 0
+  P = x + y**2  Q = x**2 + y
+    det J = -4*x*y + 1 | constant: False
+    fibre of F(1,0): scheme length 4 | distinct points found 4
+    exact collision (1,0) ~ (0, 1) | dP = 0  dQ = 0
+  P = x*y + x  Q = x*y + y
+    det J = x + y + 1 | constant: False
+    fibre of F(1,0): scheme length 2 | distinct points found 2
+    exact collision (1,0) ~ (-1, -2) | dP = 0  dQ = 0
+
+[F8] (x + lam L^k, y + mu L^k) in every degree
+  k = 2 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 6
+  k = 3 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 8
+  k = 4 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 10
+  k = 5 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 12
+  k = 6 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 14
+  k = 7 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 16
+  k = 8 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 18
+  k = 9 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 20
+  k = 10 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 22
+  k = 11 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 24
+  k = 12 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 26
+  k = 13 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 28
+  k = 14 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 30
+  k = 15 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 32
+  k = 16 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 34
+  k = 17 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 36
+  k = 18 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 38
+  k = 19 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 40
+  k = 20 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 42
+  k = 21 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 44
+  k = 22 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 46
+  k = 23 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 48
+  k = 24 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 50
+  k = 25 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 52
+  k = 26 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 54
+  k = 27 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 56
+  k = 28 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 58
+  k = 29 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 60
+  k = 30 | det J = 1 + k(lam+t mu)L^(k-1): True | under lam = -t mu: det J = 1 | L invariance: True | inverse verified: True | inverse degree: 62
+  all degrees verified: True
+
+[F9] mixed degree 2+3 (bounded grid of the quadratic part)
+  degree one equations of det J - 1: [a2 + 2*b3, 2*a1 + b2] | as expected 2a1 + b2, a2 + 2b3: True
+  degree four part equals det J of the cubic part: True
+  degree two part linear in the cubic coefficients: True
+  generic solution of the degree two part: [{a4: -2*a1*b2/3 + 2*a2*b1/3 - b5/3, a5: -2*a1*b3 + 2*a3*b1 - b6, a6: -2*a2*b3 + 2*a3*b2 - 3*b7}]
+  integer quadratic data scanned: 2401 | admitting cubic data: []
+  rational quadratic data sampled: 250 | admitting cubic data: []
+  mixed-degree Keller maps found in the scanned class: 0 (none => in every scanned case det J == 1 forces the cubic part to vanish,
+   so those maps have degree <= 2 and are covered by F1)
+
+==============================================================================
+tally
+==============================================================================
+  F1 degree <= 2, complete: all branches invertible: True
+  F2 triangular, complete: inverse checks: (0, 0)
+  F3 cubic-linear: all cases invertible: True | all box records injective: True
+  F4 cubic homogeneous, complete: closed form inverse checks: (0, 0) | member inverse verified: True
+  F5 box scan: 9 Keller maps, all injective: True
+  F6 tame: inverses verified: 66 / 66
+  F7 colliding maps: 4 (each with a non-constant determinant)
+  F8 all degrees invertible: True
+  F9 mixed degree 3, scanned quadratic data: 2651, maps found: 0
+
+total wall clock: 826.7 s
+
+No pair (P, Q) satisfying (J) and (C) was produced.  Every Keller map
+constructed in F1-F6 and F8-F9 is injective, certified by an explicit
+polynomial inverse and/or an exact fibre of cardinality one.  Every
+colliding map in F7 has a non-constant determinant.
